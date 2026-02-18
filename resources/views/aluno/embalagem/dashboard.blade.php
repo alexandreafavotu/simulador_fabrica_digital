@@ -42,8 +42,20 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📦</span> {{ __('Estação de Embalagem') }}
-            </h2>
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+             style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73L12 2 4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73L12 22l8-4.27A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12 20.73 6.96"/>
+            <line x1="12" y1="22" x2="12" y2="12"/>
+        </svg>
+    @else
+        <span class="text-3xl">📦</span>
+    @endif
+
+    {{ __('Estação de Embalagem') }}
+</h2>
+
             
             @if(Auth::user()->tipo == 'professor')
                 <a href="{{ route('professor.monitoramento.index', $aluno->turma_id) }}" 
@@ -51,7 +63,15 @@
                     ⬅ Sair do Setor
                 </a>
             @else
-                <button onclick="history.back()" class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_black] font-black uppercase text-xs">⬅ Voltar</button>
+                <button onclick="history.back()" class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_black] font-black uppercase text-xs">@if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar</button>
             @endif
         </div>
     </x-slot>
@@ -71,7 +91,28 @@
             
             @if($ordensParaEmbalar->isEmpty())
                 <div class="text-center py-20 bg-white border-4 border-dashed border-gray-300 rounded-3xl">
-                    <span class="text-7xl">😴</span>
+                    @if(Auth::user()->acessibilidade_visual)
+    <div class="flex justify-center">
+        <svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" 
+             stroke="#FFFF00" stroke-width="2"
+             style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+            
+            <!-- Rosto redondo -->
+            <circle cx="12" cy="12" r="9" stroke="#FFFF00" stroke-width="2" />
+
+            <!-- Olhos fechados (Traços Retos para evitar efeito de coração) -->
+<line x1="8" y1="11" x2="10" y2="11" stroke="#FFFF00" stroke-width="2" />
+<line x1="14" y1="11" x2="16" y2="11" stroke="#FFFF00" stroke-width="2" />
+
+
+            <!-- Boca relaxada -->
+            <path d="M9 15 q3 2 6 0" stroke="#FFFF00" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </div>
+@else
+    <span class="text-7xl">😴</span>
+@endif
+
                     <h3 class="text-2xl font-black text-gray-400 uppercase mt-4">Nenhum lote na esteira</h3>
                     <p class="font-bold text-gray-400">Aguardando a conclusão de ordens na Produção.</p>
                 </div>
@@ -145,8 +186,37 @@
                                                         {{ $mp->nome }}
                                                     </p>
                                                     <p class="text-[9px] font-bold uppercase mt-1 text-gray-500">
-                                                        {{ $materialEntreguePeloWms ? '✓ Material Disponível' : '⚠️ Aguardando Almoxarifado' }}
-                                                    </p>
+    @if($materialEntreguePeloWms)
+        
+        {{-- MATERIAL DISPONÍVEL --}}
+        @if(Auth::user()->acessibilidade_visual)
+            <svg class="w-3 h-3 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
+                style="stroke:#FFFF00!important;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        @else
+            ✓
+        @endif
+        Material Disponível
+
+    @else
+
+        {{-- AGUARDANDO – ALERTA AMARELO --}}
+        @if(Auth::user()->acessibilidade_visual)
+            <svg class="w-3 h-3 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+                 style="stroke:#FFFF00!important;">
+                <path d="M12 2 L22 20 H2 Z"></path>
+                <line x1="12" y1="8" x2="12" y2="13"></line>
+                <circle cx="12" cy="17" r="1"></circle>
+            </svg>
+        @else
+            ⚠️
+        @endif
+        Aguardando Almoxarifado
+
+    @endif
+</p>
+
                                                 </div>
                                             </div>
 
@@ -175,7 +245,17 @@
                                                 x-show="selecionados === totalItens"
                                                 x-transition
                                                 class="bg-green-500 hover:bg-green-600 text-white border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-[1px] px-6 py-2 rounded font-black uppercase text-xs transition-all flex items-center gap-2">
-                                            <span>📦</span> Lacrar Lote / Embalar
+                                            @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; fill:none!important;">
+        <rect x="3" y="7" width="18" height="14" rx="2" ry="2"></rect>
+        <polyline points="3,7 12,2 21,7"></polyline>
+    </svg>
+@else
+    📦
+@endif
+Lacrar Lote / Embalar
+
                                         </button>
                                         
                                         <div x-show="selecionados !== totalItens" class="text-[12px] font-black text-gray-400 uppercase italic">

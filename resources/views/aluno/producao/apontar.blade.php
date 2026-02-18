@@ -2,13 +2,31 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">🏭</span> {{ __('Apontamento de Produção') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; filter:none!important;">
+        <rect x="3" y="10" width="6" height="10"></rect>
+        <rect x="10" y="6" width="6" height="14"></rect>
+        <rect x="17" y="12" width="4" height="8"></rect>
+    </svg>
+@else
+    <span class="text-3xl">🏭</span>
+@endif
+ {{ __('Apontamento de Produção') }}
             </h2>
             
             {{-- Botão Voltar Inteligente --}}
             <button onclick="history.back()" 
                class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                ⬅ Voltar
+                @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar
             </button>
         </div>
     </x-slot>
@@ -37,7 +55,19 @@
                 {{-- CABEÇALHO DO CARD --}}
                 <div class="bg-indigo-600 text-white p-6 border-b-4 border-black flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <span class="text-4xl">📝</span>
+                        @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone amarelo para PCD -->
+    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; filter:none!important;">
+        <rect x="3" y="4" width="14" height="16" rx="2" ry="2"></rect>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="9" y1="12" x2="15" y2="12"></line>
+        <line x1="9" y1="16" x2="13" y2="16"></line>
+    </svg>
+@else
+    <span class="text-4xl">📝</span>
+@endif
+
                         <div>
                             <h3 class="text-2xl font-black uppercase tracking-tighter">Finalizar Ordem #{{ $op->id }}</h3>
                             <p class="text-xs font-bold text-indigo-200 uppercase tracking-widest">Entrada de Produto Acabado</p>

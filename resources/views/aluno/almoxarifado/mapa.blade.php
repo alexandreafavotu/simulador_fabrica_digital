@@ -2,7 +2,18 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">🗺️</span> {{ __('Mapa de Armazenagem (WMS)') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+        style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M2 12h20"></path>
+        <path d="M12 2a15 15 0 0 1 0 20"></path>
+        <path d="M12 2a15 15 0 0 0 0 20"></path>
+    </svg>
+@else
+    <span class="text-3xl">🗺️</span>
+@endif
+ {{ __('Mapa de Armazenagem (WMS)') }}
             </h2>
 
             @if(Auth::user()->tipo == 'professor')
@@ -13,7 +24,15 @@
             @else
                 <a href="{{ route('aluno.almoxarifado.dashboard') }}" 
                    class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Voltar ao Pátio
+                    @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar ao Pátio
                 </a>
             @endif
         </div>
@@ -27,7 +46,17 @@
                 <!-- MODO PICKING (TAREFA DE SEPARAÇÃO) -->
                 <div class="bg-indigo-600 text-white p-6 border-4 border-black shadow-[8px_8px_0px_0px_black] flex flex-col md:flex-row justify-between items-center animate-pulse rounded-xl">
                     <div class="flex items-center gap-4">
-                        <span class="text-5xl">🚨</span>
+                        @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; fill:none!important;">
+        <path d="M4 14v-2a8 8 0 1 1 16 0v2"></path>
+        <path d="M10 18h4"></path>
+        <path d="M4 14h16l-1 6H5l-1-6z"></path>
+    </svg>
+@else
+    <span class="text-5xl">🚨</span>
+@endif
+
                         <div>
                             <h3 class="text-2xl font-black text-yellow-300 uppercase tracking-tighter mb-1">AÇÃO NECESSÁRIA: PICKING</h3>
                             <p class="text-lg font-bold leading-tight">
@@ -39,7 +68,19 @@
                             </p>
                         </div>
                     </div>
-                    <div class="text-6xl hidden md:block">📍</div>
+                    @if(Auth::user()->acessibilidade_visual)
+<div class="hidden md:block">
+    <svg class="w-14 h-14" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+        style="stroke:#FFFF00!important; fill:none!important;">
+        <circle cx="12" cy="10" r="3"></circle>
+        <path d="M12 13v8"></path>
+        <path d="M5 10a7 7 0 1 1 14 0c0 7-7 11-7 11s-7-4-7-11z"></path>
+    </svg>
+</div>
+@else
+    <div class="text-6xl hidden md:block">📍</div>
+@endif
+
                 </div>
 
             @elseif($materiaisSemLocal->isNotEmpty())
@@ -186,7 +227,20 @@
                                                                 @if($podeClicar)
                                                                     {{-- Tem Saldo: Alvo Normal --}}
                                                                     <div class="absolute -top-4 -right-4 bg-red-600 text-white border-2 border-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg animate-bounce font-bold text-xs z-40">
-                                                                        🎯
+                                                                        @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+        style="stroke:#FFFF00!important; fill:none!important;">
+        <circle cx="12" cy="12" r="8"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+        <line x1="12" y1="4" x2="12" y2="2"></line>
+        <line x1="12" y1="22" x2="12" y2="20"></line>
+        <line x1="4" y1="12" x2="2" y2="12"></line>
+        <line x1="22" y1="12" x2="20" y2="12"></line>
+    </svg>
+@else
+    🎯
+@endif
+
                                                                     </div>
                                                                 @else
                                                                     {{-- Saldo Zero: Proibido --}}
@@ -202,7 +256,17 @@
                                                                     @if(Auth::user()->tipo == 'aluno')
                                                                         <button onclick="armazenarMaterial({{ $local->id }}, '{{ $local->codigo_visual }}')" 
                                                                             class="h-24 bg-gray-50 border-2 border-dashed border-green-400 rounded flex flex-col items-center justify-center hover:bg-green-100 hover:border-solid hover:border-green-600 hover:scale-105 transition transform shadow-sm group">
-                                                                            <span class="text-2xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition">⬇️</span>
+                                                                           @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-6 h-6 opacity-70 group-hover:opacity-100 group-hover:scale-110 transition"
+        viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
+        style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+        <path d="M12 5v14"></path>
+        <polyline points="6 13 12 19 18 13"></polyline>
+    </svg>
+@else
+    ⬇️
+@endif
+
                                                                             <span class="text-[9px] font-bold text-green-700 mt-1 uppercase">Guardar Aqui</span>
                                                                             <span class="text-[9px] text-gray-700 mt-1">{{ $local->codigo_visual }}</span>
                                                                         </button>

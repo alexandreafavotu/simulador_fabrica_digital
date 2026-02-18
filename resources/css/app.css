@@ -1,3 +1,44 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* MODO ALTO CONTRASTE NUCLEAR */
+    
+    /* 1. SELETOR UNIVERSAL: Força fundo preto e texto amarelo em ABSOLUTAMENTE TUDO */
+    body.high-contrast, 
+    body.high-contrast *, 
+    body.high-contrast [style] {
+        background-color: #000000 !important;
+        color: #ffff00 !important;
+        border-color: #ffff00 !important;
+        box-shadow: none !important;
+        background-image: none !important; /* Remove gradientes que escondem o texto */
+    }
+
+    /* 2. FORÇAR ÍCONES (CARRINHO, FÁBRICA, CAIXA) */
+    /* Se o filtro não funcionou, vamos usar uma técnica de brilho extremo */
+    body.high-contrast img, 
+    body.high-contrast svg {
+        filter: brightness(0) invert(1) !important; /* Transforma em silhueta branca pura */
+        background-color: transparent !important;
+    }
+
+    /* 3. BOTÕES E CAMPOS (BORDA GROSSA PARA ENXERGAR) */
+    body.high-contrast button, 
+    body.high-contrast a, 
+    body.high-contrast input, 
+    body.high-contrast select {
+        border: 3px solid #ffff00 !important;
+        background-color: #000000 !important;
+        color: #ffff00 !important;
+    }
+
+    /* 4. EXCEÇÃO PARA O MANUAL (PARA SOBREPOR O ESTILO INLINE) */
+    /* O seu manual tem color: #1a202c !important no HTML. Este seletor tenta vencer isso. */
+    body.high-contrast div#ajuda-corpo,
+    body.high-contrast div#ajuda-corpo * {
+        color: #ffff00 !important;
+        background-color: #000000 !important;
+    }
+}

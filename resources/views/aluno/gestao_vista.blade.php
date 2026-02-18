@@ -2,7 +2,13 @@
     <x-slot name="header">
         <div class="flex justify-between items-center text-gray-800">
             <h2 class="font-black text-2xl leading-tight flex items-center gap-2">
-                <span class="animate-pulse text-3xl">📺</span> {{ __('Gestão à Vista') }}
+                <span class="animate-pulse flex items-center justify-center">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00!important"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>
+    @else
+        <span class="text-3xl">📺</span>
+    @endif
+</span> {{ __('Gestão à Vista') }}
             </h2>
             
             <div class="flex items-center gap-4">
@@ -10,7 +16,12 @@
                 @if(Auth::user()->tipo == 'professor')
                     <a href="{{ route('professor.monitoramento.index', $aluno->turma_id) }}" 
                        class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2 mr-4">
-                        ⬅ Sair do Setor
+                        @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter:none!important; stroke:#ffff00 !important;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+@else
+    ⬅
+@endif 
+Sair do Setor
                     </a>
                 @endif
 
@@ -21,9 +32,15 @@
                 </div>
                 
                 {{-- BOTÃO RECARREGAR --}}
-                <button onclick="window.location.reload()" class="bg-yellow-400 border-2 border-black p-2 rounded shadow-[3px_3px_0px_0px_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition active:bg-yellow-500">
-                    🔄
-                </button>
+                <button onclick="window.location.reload()" 
+        class="border-2 border-black p-2 rounded shadow-[3px_3px_0px_0px_black] hover:translate-x-[1px] hover:translate-y-[1px] transition 
+        {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-yellow-400 active:bg-yellow-500' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="3" style="filter:none!important; stroke:#ffff00!important"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+    @else
+        🔄
+    @endif
+</button>
             </div>
         </div>
     </x-slot>

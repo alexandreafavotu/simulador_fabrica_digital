@@ -212,24 +212,41 @@
                     </div>
                 @endif
 
+                
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <div class="flex flex-col items-end cursor-pointer">
-                            <button class="inline-flex items-center px-5 py-2 border-2 border-black {{ $isProf ? 'bg-yellow-400' : 'bg-yellow-400' }} rounded text-sm font-black text-gray-800 hover:bg-gray-50 transition shadow-[2px_2px_0px_0px_black] active:shadow-none active:translate-y-[1px]">
-                                <div class="flex flex-col items-end mr-2 text-right">
-                                    <span class="font-black text-gray-900 leading-none uppercase text-xs ">{{ Auth::user()->name }}</span>
-                                    <span class="text-[10px] {{ $isProf ? 'text-indigo-800' : 'text-red-600' }} font-black uppercase tracking-tighter leading-none mt-0.5">
-                                        {{ $isProf ? 'GAME MASTER' : 'ALUNO' }}
-                                    </span>
-                                </div>
-                                <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                            </button>
-                            
-                            <span class="text-[10px] text-black-900 mt-0.5 italic block text-right leading-tight whitespace-nowrap mr-[3px]">
-                                Desenvolvimento: Prof. Alexandre Felix de Araujo
-                            </span>
-                        </div>
-                    </x-slot>
+    <div class="flex flex-col items-end cursor-pointer">
+        
+        {{-- CONTAINER HORIZONTAL PARA ALINHAR O SELO E O BOTÃO --}}
+        <div class="flex items-center gap-2">
+
+            {{-- SELO DE ACESSIBILIDADE ATIVA --}}
+            @if(Auth::user()->acessibilidade_visual || Auth::user()->acessibilidade_motora || Auth::user()->acessibilidade_cognitiva || Auth::user()->acessibilidade_audio || Auth::user()->acessibilidade_pictogramas || Auth::user()->acessibilidade_libras)
+                <div class="inline-flex items-center p-1 bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" title="Recursos de Acessibilidade Ativos">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="black" stroke-width="1.5"/><path d="M5 11.5c3-1.5 11-1.5 14 0M12 10.5l-3.5 8M12 10.5l3.5 8" stroke="black" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="6.5" r="2" fill="#3ABEF9" stroke="black" stroke-width="1"/><circle cx="5" cy="11.5" r="1.5" fill="#3ABEF9" stroke="black" stroke-width="1"/><circle cx="19" cy="11.5" r="1.5" fill="#3ABEF9" stroke="black" stroke-width="1"/><circle cx="8.5" cy="18.5" r="1.5" fill="#3ABEF9" stroke="black" stroke-width="1"/><circle cx="15.5" cy="18.5" r="1.5" fill="#3ABEF9" stroke="black" stroke-width="1"/></svg>
+                </div>
+            @endif
+
+            {{-- BOTÃO ORIGINAL DO PERFIL --}}
+            <button class="inline-flex items-center px-5 py-2 border-2 border-black {{ $isProf ? 'bg-yellow-400' : 'bg-yellow-400' }} rounded text-sm font-black text-gray-800 hover:bg-gray-50 transition shadow-[2px_2px_0px_0px_black] active:shadow-none active:translate-y-[1px]">
+                <div class="flex flex-col items-end mr-2 text-right">
+                    <span class="font-black text-gray-900 leading-none uppercase text-xs ">{{ Auth::user()->name }}</span>
+                    <span class="text-[10px] {{ $isProf ? 'text-indigo-800' : 'text-red-600' }} font-black uppercase tracking-tighter leading-none mt-0.5">
+                        {{ $isProf ? 'GAME MASTER' : 'ALUNO' }}
+                    </span>
+                </div>
+                <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+            
+        </div>
+
+        {{-- TEXTO DE DESENVOLVIMENTO (PERMANECE ABAIXO) --}}
+        <span class="text-[10px] text-black-900 mt-0.5 italic block text-right leading-tight whitespace-nowrap mr-[3px]">
+            Desenvolvimento: Prof. Alexandre Felix de Araujo
+        </span>
+    </div>
+</x-slot>
 
                     <x-slot name="content">
                         <div class="border-2 border-black shadow-[4px_4px_0px_0px_black]">

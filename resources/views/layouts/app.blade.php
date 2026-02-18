@@ -59,10 +59,110 @@
             #notificacao-sucesso.mostrar {
                 transform: translateY(20px);
             }
+        /* ======================================================= */
+/* ACESSIBILIDADE FINAL: FORÇAR AMARELO EM QUALQUER ÍCONE SVG */
+/* ======================================================= */
+body.high-contrast {
+    background-color: #000000 !important;
+}
+
+body.high-contrast div, 
+body.high-contrast section, 
+body.high-contrast main,
+body.high-contrast header,
+body.high-contrast nav,
+body.high-contrast footer {
+    background-color: #000000 !important;
+    color: #ffff00 !important;
+    border-color: #ffff00 !important;
+    box-shadow: none !important;
+    background-image: none !important;
+}
+
+/* A REGRA QUE VAI RESOLVER AS SETAS E A IMPRESSORA */
+/* Ela diz: "Qualquer desenho SVG dentro do modo PCD deve ser amarelo" */
+body.high-contrast svg {
+    fill: #ffff00 !important; /* Pinta o recheio do desenho */
+    stroke: #ffff00 !important; /* Pinta o contorno do desenho */
+    filter: none !important; /* Desliga qualquer filtro que possa deixar branco */
+}
+
+/* Garante texto amarelo em tudo */
+body.high-contrast td, body.high-contrast th, body.high-contrast p, body.high-contrast span, body.high-contrast h1, body.high-contrast h2, body.high-contrast h3, body.high-contrast li {
+    color: #ffff00 !important;
+
+}
+/* REGRA PARA FORÇAR AMARELO EM TODA A TABELA */
+body.high-contrast table, 
+body.high-contrast table * {
+    color: #FFFF00 !important;
+    background-color: #000000 !important;
+    border-color: #FFFF00 !important;
+}
+
+/* Botões, Manual e Botão de Ajuda */
+body.high-contrast button, body.high-contrast a { border: 2px solid #ffff00 !important; background-color: #000 !important; color: #ff0 !important; }
+body.high-contrast #ajuda-corpo, body.high-contrast #ajuda-corpo * { color: #ffff00 !important; }
+body.high-contrast .fixed.bottom-6.right-6 button { background-color: #ffff00 !important; color: #000 !important; }
+
+
+@if(Auth::user()->acessibilidade_motora)
+    /* NAVEGAÇÃO MOTOR: DESTRUIÇÃO DE VARIÁVEIS TAILWIND */
+    *:focus {
+        /* 1. Mata a linha branca e azul do Tailwind */
+        --tw-ring-offset-width: 0px !important;
+        --tw-ring-width: 0px !important;
+        --tw-ring-offset-color: transparent !important;
+        box-shadow: none !important;
+
+        /* 2. Força a Moldura Amarela Neon Grossa */
+        outline: 8px solid #FFFF00 !important;
+        outline-offset: 4px !important;
+    }
+
+    /* 3. Garante que o fundo preto não "coma" a borda */
+    body.high-contrast *:focus {
+        outline: 8px solid #FFFF00 !important;
+        box-shadow: 0 0 0 12px #000000 !important;
+    }
+@endif
+
+@if(Auth::user()->acessibilidade_motora)
+    /* NAVEGAÇÃO MOTOR: DESTRUIÇÃO DE VARIÁVEIS TAILWIND (JÁ EXISTENTE) */
+    *:focus {
+        /* ... suas regras de foco já existentes ... */
+    }
+
+    /* AUMENTO DA ÁREA DE CLIQUE (PADDING / TAP-TARGET) */
+    button, a.btn, input[type="submit"], input[type="button"] { /* Seletores para botões e links com 'btn' */
+        min-width: 48px !important;    /* Largura mínima padrão de acessibilidade */
+        min-height: 48px !important;   /* Altura mínima padrão de acessibilidade */
+        padding: 12px 18px !important; /* Aumenta o padding para expandir a área de clique */
+        box-sizing: border-box !important; /* Garante que padding não estoure layout */
+    }
+
+    /* Aumenta a área de clique para campos de texto também */
+    input[type="text"], input[type="email"], input[type="password"], textarea, select {
+        min-height: 44px !important; /* Altura mínima para facilitar o toque/clique */
+        padding: 8px 12px !important; /* Ajusta o padding para conforto */
+        box-sizing: border-box !important;
+    }
+
+    /* Ajuste específico para checkboxes/radios se necessário (visual) */
+    input[type="checkbox"], input[type="radio"] {
+        transform: scale(1.5) !important; /* Aumenta visualmente o checkbox/radio */
+        margin-right: 10px !important;    /* Cria espaço */
+    }
+@endif
+
+/* FILTRO PARA TRANSFORMAR PICTOGRAMAS EM AMARELO NEON (MODO PCD) */
+body.high-contrast .img-pcd-yellow {
+    filter: invert(100%) sepia(100%) saturate(5000%) hue-rotate(5deg) brightness(100%) contrast(100%) !important;
+}
             
         </style>
     </head>
-    <body class="font-sans antialiased bg-gray-100">
+    <body class="font-sans antialiased bg-gray-100 {{ Auth::user()?->acessibilidade_visual ? 'high-contrast' : '' }}">
         
         <div class="min-h-screen flex flex-col">
             <!-- Menu Superior -->
@@ -77,7 +177,13 @@
                         </div>
                         <!-- Botão Imprimir -->
                         <button onclick="window.print()" class="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.198-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" /></svg>
+                            @if(Auth::user()?->acessibilidade_visual)
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.198-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z"></path>
+    </svg>
+@else
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.198-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z"></path></svg>
+@endif
                             Imprimir
                         </button>
                     </div>
@@ -98,6 +204,7 @@
                     <p class="text-gray-200 text-xs mt-1">Desenvolvido por: Professor Alexandre Felix de Araujo</p>
                 </div>
             </footer>
+            
         </div>
         <!-- ======================================================= -->
     <!-- SISTEMA DE MANUAL E INSTRUÇÕES DINÂMICO (PROJETO 2.0)   -->
@@ -130,7 +237,7 @@
             </div>
 
             <!-- Conteúdo do Manual -->
-            <div id="ajuda-corpo" class="flex-1 overflow-y-auto p-6 prose prose-slate" style="white-space: pre-wrap; color: #1a202c !important;">
+            <div id="ajuda-corpo" class="flex-1 overflow-y-auto p-6 prose prose-slate" style="white-space: pre-wrap;">
                 <!-- O texto virá do banco de dados aqui -->
                 <div class="animate-pulse flex space-y-4 flex-col">
                     <div class="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -248,18 +355,34 @@
     </script>
 
     <!-- ======================================================= -->
-    <!-- MODAL "SOBRE O SISTEMA" (CRÉDITOS E VERSÃO)            -->
+    <!-- MODAL "SOBRE O SISTEMA" (AJUSTADO PARA ACESSIBILIDADE) -->
     <!-- ======================================================= -->
+    
+    {{-- Variável de controle para o layout mestre --}}
+    @php 
+        $isPcdGlobal = Auth::user()?->acessibilidade_visual; 
+        
+        // Ícone de Check para a lista (SVG Amarelo ou Emoji)
+        // Isso garante que no modo PCD o check seja amarelo puro
+        $iconCheck = $isPcdGlobal 
+            ? '<svg class="w-3 h-3 inline-block mr-1 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="#ffff00" stroke-width="3" style="filter:none!important"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>' 
+            : '✅';
+    @endphp
     
     <!-- Botão Discreto (Canto Inferior Esquerdo) -->
     <div class="fixed bottom-6 left-6 z-50">
         <button onclick="document.getElementById('modal-sobre').classList.remove('hidden')" 
-                class="text-gray-400 hover:text-indigo-600 transition-all duration-300 flex items-center gap-2 bg-white/50 backdrop-blur-sm px-3 py-1 rounded-full border border-gray-200 shadow-sm no-print"
+                class="transition-all duration-300 flex items-center gap-2 px-3 py-1 rounded-full border no-print
+                {{ $isPcdGlobal ? 'bg-black border-yellow-400' : 'bg-white/50 backdrop-blur-sm border-gray-200 shadow-sm text-gray-400 hover:text-indigo-600' }}"
                 title="Sobre o Software">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" 
+                 stroke="{{ $isPcdGlobal ? '#ffff00' : 'currentColor' }}" 
+                 style="{{ $isPcdGlobal ? 'filter: none !important; stroke: #ffff00 !important;' : '' }}">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span class="text-[10px] font-bold uppercase tracking-widest">v1.5</span>
+
+            <span class="text-[10px] font-bold uppercase tracking-widest {{ $isPcdGlobal ? 'text-yellow-400' : '' }}">v1.5</span>
         </button>
     </div>
 
@@ -268,118 +391,136 @@
         <!-- Fundo Escuro -->
         <div class="absolute inset-0 bg-gray-900/80 backdrop-blur-md"></div>
         
-        <!-- Caixa do Modal (Estética 3D) -->
-        <div class="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl border-2 border-indigo-100 overflow-hidden transform transition-all">
+        <!-- Caixa do Modal -->
+        <div class="relative w-full max-w-lg rounded-3xl overflow-hidden transform transition-all {{ $isPcdGlobal ? 'bg-black border-4 border-yellow-400' : 'bg-white shadow-2xl border-2 border-indigo-100' }}">
             
             {{-- Faixa de Topo --}}
-            <div class="bg-indigo-600 h-2 w-full"></div>
+            <div class="{{ $isPcdGlobal ? 'bg-black h-2' : 'bg-indigo-600 h-2 w-full' }}"></div>
 
             <div class="p-8">
+                {{-- Cabeçalho do Modal --}}
                 <div class="flex justify-between items-start mb-6">
                     <div class="flex items-center gap-4">
-                        <div class="bg-indigo-100 p-3 rounded-2xl">
-                            <span class="text-3xl">🚀</span>
-                        </div>
+                       <div class="p-3 rounded-2xl {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-indigo-100' }}">
+                            @if($isPcdGlobal)
+                                <!-- Ícone de Fábrica (SVG Amarelo Neon) -->
+                                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important">
+                                    <path d="M2 20V9l9-2v13M11 20V5l9-2v17" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M11 13h4M11 17h4M5 13h3M5 17h3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            @else
+                                <span class="text-3xl">🏭</span>
+                            @endif
+                        </div> 
                         <div>
-                            <h3 class="text-2xl font-black text-gray-800 leading-none">Fábrica-Digital</h3>
-                            <p class="text-indigo-600 font-bold text-xs uppercase tracking-widest mt-1">Simulator Educacional</p>
+                            <h3 class="text-2xl font-black leading-none {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-800' }}">Fábrica-Digital</h3>
+                            <p class="font-bold text-xs uppercase tracking-widest mt-1 {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-600' }}">Simulator Educacional</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('modal-sobre').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                    <button onclick="document.getElementById('modal-sobre').classList.add('hidden')" class="text-2xl font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400 hover:text-gray-600' }}">&times;</button>
                 </div>
 
                 <div class="space-y-6">
                     {{-- Informações de Versão --}}
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                            <p class="text-[10px] text-gray-400 font-black uppercase">Versão Atual</p>
-                            <p class="text-lg font-bold text-gray-700">v1.5</p>
+                        <div class="p-3 rounded-xl {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-gray-50 border border-gray-100' }}">
+                            <p class="text-[10px] font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Versão Atual</p>
+                            <p class="text-lg font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-700' }}">v1.5</p>
                         </div>
-                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                            <p class="text-[10px] text-gray-400 font-black uppercase">Última VERSÃO</p>
-                            <p class="text-lg font-bold text-gray-700">{{ date('d/m/Y') }}</p>
+                        <div class="p-3 rounded-xl {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-gray-50 border border-gray-100' }}">
+                            <p class="text-[10px] font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Última Versão</p>
+                            <p class="text-lg font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-700' }}">{{ date('d/m/Y') }}</p>
                         </div>
                     </div>
 
-                    {{-- Notas de Lançamento --}}
-                    <!-- SEÇÃO DE EVOLUÇÃO DO SISTEMA -->
-<div class="mt-6 space-y-4">
-    <h4 class="font-black text-xs text-indigo-600 uppercase tracking-widest border-b-2 border-indigo-100 pb-1">
-        🚀 Linha do Tempo de Desenvolvimento
-    </h4>
+                    {{-- Notas de Lançamento (Timeline) --}}
+                    <div class="mt-6 space-y-4">
+                        <h4 class="font-black text-xs uppercase tracking-widest pb-1 border-b-2 {{ $isPcdGlobal ? 'text-yellow-400 border-yellow-400' : 'text-indigo-600 border-indigo-100' }}">
+                            Linha do Tempo de Desenvolvimento
+                        </h4>
 
-    <!-- VERSÃO 1.5 (ATUAL) -->
-    <div class="group relative bg-indigo-50 border-2 border-indigo-500 p-3 rounded-lg transition-all duration-300 hover:shadow-[5px_5px_0px_0px_rgba(79,70,229,1)]">
-        <div class="flex justify-between items-center mb-2">
-            <span class="bg-indigo-600 text-white px-2 py-0.5 rounded font-black text-[10px]">v1.5 (Stable)</span>
-            <span class="text-[10px] font-bold text-indigo-400">05/01/2026</span>
-        </div>
-        <p class="text-xs font-black text-indigo-900 uppercase">Reforma Industrial e de Segurança</p>
-        
-        {{-- Detalhes que aparecem ao passar o mouse --}}
-        <ul class="mt-2 space-y-1 text-[10px] font-medium text-indigo-700 hidden group-hover:block animate-fade-in">
-            <li>✅ **Torre de Controle:** Monitor Andon com rastreabilidade cronológica (WMS/Prod).</li>
-            <li>✅ **Engenharia do Caos:** Sabotagem de Carga (Recusa forçada) e Refugo Programado.</li>
-            <li>✅ **BI Executivo:** Dashboard Dark Mode com indicadores de OEE, OTIF e Custo da Ineficiência.</li>
-            <li>✅ **Regras de Mercado:** Limitador de cota de vendas diárias por aluno.</li>
-            <li>✅ **UX Blindada:** Modais de confirmação com trava física de duplo clique.</li>
-            <li>✅ **Manual Vivo:** Sistema de documentação técnica editável por setor.</li>
-            <li>✅ **Consolidação Logística:** Validação fisíca de lotes produzidos.</li>
-            <li>✅ **Consolidação Logística:** Validação fisíca de lotes produzidos.</li>
-            <li>✅ **Design System:** Interface Industrial 3D (Neo-Brutalism).</li>
-            <li>✅ **Multi-Professor:** Isolamento total de turmas por docente.</li>
-            <li>✅ **Segurança:** Senha Mestra para ações destrutivas.</li>
-            <li>✅ **Integridade:** Soft Deletes (Lixeira Segura) em todo o banco.</li>
-            <li>✅ **Perfil:** Dados corporativos (CNPJ/Endereço) integrados.</li>
-        </ul>
-        {{-- Dica visual --}}
-        <p class="text-[8px] text-indigo-300 font-bold mt-1 group-hover:hidden italic">Passe o mouse para detalhes...</p>
-    </div>
+                        <!-- VERSÃO 1.5 (ATUAL) -->
+                        <div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-4 border-yellow-400' : 'bg-indigo-50 border-2 border-indigo-500 hover:shadow-[5px_5px_0px_0px_rgba(79,70,229,1)]' }}">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="px-2 py-0.5 rounded font-black text-[10px] {{ $isPcdGlobal ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white' }}">v1.5 (Stable)</span>
+                                <span class="text-[10px] font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-400' }}">05/01/2026</span>
+                            </div>
+                            <p class="text-xs font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-900' }}">Reforma Industrial e de Segurança</p>
+                            
+                            {{-- LISTA V1.5 COMPLETA --}}
+                            <ul class="mt-2 space-y-1 text-[10px] font-medium hidden group-hover:block {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-700' }}">
+                            <li>{!! $iconCheck !!} **Visual:** Modo Alto Contraste (Preto e Amarelo Neon).</li>
+                            <li>{!! $iconCheck !!} **Inclusão 4.0:** Motor de Voz e Tradutor de Libras.</li>
+                            <li>{!! $iconCheck !!} **Acessibilidade:** Pictogramas e Navegação Assistida.</li>
 
-    <!-- VERSÃO 1.0 (LANÇAMENTO) -->
-    <div class="group relative bg-gray-50 border-2 border-gray-300 p-3 rounded-lg transition-all duration-300 hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,0.1)] grayscale hover:grayscale-0">
-        <div class="flex justify-between items-center mb-2">
-            <span class="bg-gray-500 text-white px-2 py-0.5 rounded font-black text-[10px]">v1.0 (Legacy)</span>
-            <span class="text-[10px] font-bold text-gray-400">31/12/2025</span>
-        </div>
-        <p class="text-xs font-black text-gray-600 uppercase">Lançamento do Ecossistema</p>
+                                <li>{!! $iconCheck !!} **Torre de Controle:** Monitor Andon com rastreabilidade cronológica.</li>
+                                <li>{!! $iconCheck !!} **Engenharia do Caos:** Sabotagem programada de Carga e Refugo.</li>
+                                <li>{!! $iconCheck !!} **BI Executivo:** Dashboard Dark Mode com indicadores (OEE, OTIF).</li>
+                                <li>{!! $iconCheck !!} **Regras de Mercado:** Limitador de cota de vendas diárias por aluno.</li>
+                                <li>{!! $iconCheck !!} **UX Blindada:** Modais de confirmação com trava física de duplo clique.</li>
+                                <li>{!! $iconCheck !!} **Manual Vivo:** Sistema de documentação técnica editável por setor.</li>
+                                <li>{!! $iconCheck !!} **Consolidação Logística:** Validação física de lotes produzidos.</li>
+                                <li>{!! $iconCheck !!} **Design System:** Interface Industrial 3D Neo-Brutalism.</li>
+                                <li>{!! $iconCheck !!} **Multi-Professor:** Isolamento total por docente.</li>
+                                <li>{!! $iconCheck !!} **Segurança:** Senha Mestra para ações destrutivas.</li>
+                                <li>{!! $iconCheck !!} **Integridade:** Soft Deletes (Lixeira Segura).</li>
+                                <li>{!! $iconCheck !!} **Perfil:** Dados corporativos integrados.</li>
+                            </ul>
+                            <p class="text-[8px] font-bold mt-1 group-hover:hidden italic {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-300' }}">Passe o mouse para detalhes...</p>
+                        </div>
 
-        {{-- Detalhes --}}
-        <ul class="mt-2 space-y-1 text-[10px] font-medium text-gray-500 hidden group-hover:block animate-fade-in">
-            <li>✅ **Sincronização:** Conexão real entre setores.</li>
-            <li>✅ **Interface:** Experiência visual de comando industrial.</li>
-            <li>✅ **Painel do Caos:** Simulação de quebra e atrasos.</li>
-            <li>✅ **Multi-Tenant:** Isolamento total de dados entre turmas.</li>
-            <li>✅ **Multi-Professor:** Gestão isolada para multiplos docentes.</li>
-            <li>✅ **Segurança Master:** trava de segurança para exclusões.</li>
-            <li>✅ **Simulação:** Motor de tempo simulado e Game Loop.</li>
-            <li>✅ **BI Básico:** Primeiro painel de monitoramento do professor.</li>
-        </ul>
-    </div>
-</div>
+                        <!-- VERSÃO 1.0 (LEGACY) -->
+                        <div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-gray-50 border-2 border-gray-300 grayscale hover:grayscale-0' }}">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="px-2 py-0.5 rounded font-black text-[10px] {{ $isPcdGlobal ? 'bg-yellow-400 text-black' : 'bg-gray-500 text-white' }}">v1.0 (Legacy)</span>
+                                <span class="text-[10px] font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">31/12/2025</span>
+                            </div>
+                            <p class="text-xs font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-600' }}">Lançamento do Ecossistema</p>
+
+
+                            {{-- LISTA V1.0 (AGORA INCLUÍDA CORRETAMENTE) --}}
+                            <ul class="mt-2 space-y-1 text-[10px] font-medium hidden group-hover:block {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-500' }}">
+                                <li>{!! $iconCheck !!} **Sincronização:** Conexão real entre setores.</li>
+                                <li>{!! $iconCheck !!} **Interface:** Experiência visual de comando industrial.</li>
+                                <li>{!! $iconCheck !!} **Painel do Caos:** Simulação de quebra e atrasos.</li>
+                                <li>{!! $iconCheck !!} **Multi-Tenant:** Isolamento total de dados entre turmas.</li>
+                                <li>{!! $iconCheck !!} **Multi-Professor:** Gestão isolada para multiplos docentes.</li>
+                                <li>{!! $iconCheck !!} **Segurança Master:** Trava de segurança para exclusões.</li>
+                                <li>{!! $iconCheck !!} **Simulação:** Motor de tempo simulado.</li>
+                                <li>{!! $iconCheck !!} **BI Básico:** Painel de monitoramento inicial.</li>
+                            </ul>
+                            <p class="text-[8px] font-bold mt-1 group-hover:hidden italic {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Passe o mouse para detalhes...</p>
+                        </div>
+                    </div>
 
                     {{-- Créditos --}}
-                    <div class="pt-6 border-t border-gray-100">
-                        <p class="text-[10px] text-gray-400 font-black uppercase text-center mb-2">Desenvolvimento & Mentoria</p>
-                        <p class="text-sm font-bold text-gray-800 text-center">Professor Alexandre Felix de Araujo</p>
-                        <p class="text-[11px] text-gray-500 text-center mt-1">Sistema desenvolvido para capacitação técnica industrial.</p>
+                    <div class="pt-6 border-t {{ $isPcdGlobal ? 'border-yellow-400' : 'border-gray-100' }}">
+                        <p class="text-[10px] font-black uppercase text-center mb-2 {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Desenvolvimento & Mentoria</p>
+                        <p class="text-sm font-bold text-center {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-800' }}">Professor Alexandre Felix de Araujo</p>
+                        <p class="text-[11px] text-center mt-1 {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-500' }}">Sistema desenvolvido para capacitação técnica industrial.</p>
                     </div>
                 </div>
 
                 {{-- Rodapé do Modal --}}
                 <div class="mt-8 flex justify-center">
                     <button onclick="document.getElementById('modal-sobre').classList.add('hidden')" 
-                            class="bg-gray-800 text-white px-8 py-2 rounded-xl font-bold text-sm hover:bg-black transition shadow-lg">
+                            class="px-8 py-2 rounded-xl font-bold text-sm transition shadow-lg {{ $isPcdGlobal ? 'bg-black text-yellow-400 border-2 border-yellow-400' : 'bg-gray-800 text-white hover:bg-black' }}">
                         Fechar
                     </button>
                 </div>
             </div>
             
-            <div class="bg-gray-50 p-3 text-center">
-                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">AFELIX © 2026 - Todos os direitos reservados</p>
+            <div class="p-3 text-center {{ $isPcdGlobal ? 'bg-black border-t-2 border-yellow-400' : 'bg-gray-50' }}">
+                <p class="text-[9px] font-bold uppercase tracking-widest {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">AFELIX © 2026 - Todos os direitos reservados</p>
             </div>
         </div>
     </div>
+
+
+
+
+
+
 
     <!-- Notificação Customizada (Estilo Fábrica Digital) -->
     <div id="notificacao-sucesso" class="fixed top-0 left-1/2 -translate-x-1/2 z-[200] w-full max-w-sm pointer-events-none">
@@ -394,7 +535,120 @@
         </div>
     </div>
 
+<!-- ======================================================= -->
+<!-- MOTOR DE LEITURA TOTAL + CONTROLE DE SOM (PCD READY)    -->
+<!-- ======================================================= -->
+@if(Auth::user()?->acessibilidade_audio)
+    <!-- 1. Botão Flutuante de Controle de Som (Aparece acima do botão de ajuda) -->
+    <div class="fixed bottom-24 right-6 z-50 no-print">
+        <button id="btn-toggle-audio" onclick="toggleMuteAudio()" 
+                class="bg-white border-4 border-black w-14 h-14 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all flex items-center justify-center text-2xl hover:bg-yellow-50"
+                style="{{ Auth::user()->acessibilidade_visual ? 'background-color: #000 !important; border-color: #ffff00 !important; shadow: none !important;' : '' }}"
+                title="Ativar/Desativar Som da Leitura">
+            
+            <div id="container-icon-audio">
+                @if(Auth::user()->acessibilidade_visual)
+                    {{-- SVG Amarelo Neon para o Modo PCD (Som Ativo) --}}
+                    <svg id="svg-audio-on" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2.5" style="display: block;">
+                        <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    {{-- SVG Amarelo Neon para o Modo PCD (Mudo) --}}
+                    <svg id="svg-audio-off" class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2.5" style="display: none;">
+                        <path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6m0-6l6 6"></path>
+                    </svg>
+                @else
+                    {{-- Emoji para o Modo Normal --}}
+                    <span id="emoji-audio">🔊</span>
+                @endif
+            </div>
+        </button>
+    </div>
 
+    <script>
+        const synth = window.speechSynthesis;
+        let speech = new SpeechSynthesisUtterance(); 
+        speech.lang = 'pt-BR';
+        speech.rate = 1.2;
+        
+        let audioMudo = false;
+        let ultimoElementoLido = null;
+        const isPcdVisual = {{ Auth::user()->acessibilidade_visual ? 'true' : 'false' }};
+
+        // Função para Alternar Mudo
+        function toggleMuteAudio() {
+            audioMudo = !audioMudo;
+            synth.cancel();
+
+            if (isPcdVisual) {
+                document.getElementById('svg-audio-on').style.display = audioMudo ? 'none' : 'block';
+                document.getElementById('svg-audio-off').style.display = audioMudo ? 'block' : 'none';
+            } else {
+                document.getElementById('emoji-audio').innerText = audioMudo ? '🔇' : '🔊';
+            }
+        }
+
+        // MOTOR DE VARREDURA UNIVERSAL (Lê qualquer texto onde o mouse passar)
+        document.body.addEventListener('mouseover', (event) => {
+            if (audioMudo) return;
+
+            const el = event.target;
+            // Filtro de tags para evitar ler códigos ou containers vazios
+            const tagsPermitidas = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P', 'SPAN', 'BUTTON', 'A', 'TD', 'TH', 'LABEL', 'LI'];
+            
+            if (tagsPermitidas.includes(el.tagName) && el.innerText.trim() !== "" && el !== ultimoElementoLido) {
+                synth.cancel();
+                
+                if(ultimoElementoLido) ultimoElementoLido.style.outline = "none";
+                
+                speech.text = el.innerText.trim();
+                synth.speak(speech);
+
+                // Feedback visual: Moldura no que está sendo lido
+                el.style.outline = isPcdVisual ? "4px solid #FFFF00" : "3px solid #6366f1";
+                ultimoElementoLido = el;
+            }
+        });
+
+        // Limpa a moldura ao tirar o mouse
+        document.body.addEventListener('mouseout', (event) => {
+            if (event.target === ultimoElementoLido) {
+                synth.cancel();
+                event.target.style.outline = "none";
+                ultimoElementoLido = null;
+            }
+        });
+
+        // PARAR TUDO (CLIQUE EM ÁREA VAZIA OU TECLA ESC)
+        const pararTudo = () => {
+            synth.cancel();
+            if(ultimoElementoLido) {
+                ultimoElementoLido.style.outline = "none";
+                ultimoElementoLido = null;
+            }
+        };
+
+        document.addEventListener('click', pararTudo);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") pararTudo();
+        });
+    </script>
+@endif
+
+
+
+<!-- SISTEMA VLIBRAS -->
+@if(Auth::user()?->acessibilidade_libras)
+    <div vw class="enabled">
+        <div vw-access-button class="active"></div>
+        <div vw-plugin-wrapper>
+            <div class="vw-plugin-top-wrapper"></div>
+        </div>
+    </div>
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+        new window.VLibras.Widget('https://vlibras.gov.br/app');
+    </script>
+@endif
 
     </body>
-</html>
+</html>   

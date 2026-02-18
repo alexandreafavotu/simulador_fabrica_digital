@@ -6,6 +6,17 @@
     <title>DANFE - Nota Fiscal #{{ $nota->numero_nota }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+
+        @if(Auth::user()->acessibilidade_visual)
+
+    /* Força QUALQUER elemento preto do SVG virar amarelo */
+    .barcode-wrapper svg * {
+        stroke: #ffff00 !important;
+        fill: #ffff00 !important;
+    }
+
+@endif
+
         /* Estilos específicos para impressão e bordas de NF */
         .nf-box { border: 1px solid black; padding: 4px; font-size: 10px; }
         .nf-label { font-weight: bold; text-transform: uppercase; font-size: 8px; display: block; margin-bottom: 1px; }
@@ -17,6 +28,59 @@
             body { -webkit-print-color-adjust: exact; margin: 0; padding: 0; }
             .bg-gray-200 { background-color: white !important; }
         }
+
+
+        @if(Auth::user()->acessibilidade_visual)
+    /* ALTO CONTRASTE PARA DANFE */
+    body {
+        background-color: #000 !important;
+        color: #ffff00 !important;
+    }
+
+    #area-impressao {
+        background-color: #000 !important;
+        border: 2px solid #ffff00 !important;
+        color: #ffff00 !important;
+    }
+
+    .nf-label,
+    .nf-content,
+    .nf-title,
+    table,
+    th,
+    td,
+    p,
+    span,
+    h1,
+    h2,
+    h3 {
+        color: #ffff00 !important;
+        border-color: #ffff00 !important;
+    }
+
+    .nf-title {
+        background-color: #000 !important;
+        border-bottom: 1px solid #ffff00 !important;
+    }
+
+    .border-black,
+    .border-gray-400,
+    .border-gray-300 {
+        border-color: #ffff00 !important;
+    }
+
+    .bg-gray-100,
+    .bg-gray-50,
+    .bg-white {
+        background-color: #000 !important;
+    }
+
+    /* barcode container */
+    #area-impressao svg {
+        filter: brightness(150%) !important;
+    }
+@endif
+
     </style>
 </head>
 <body class="bg-gray-200 p-8 font-sans">
@@ -32,7 +96,15 @@
             </a>
         @else
             <a href="{{ route('aluno.expedicao.dashboard') }}" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 font-bold text-sm">
-                &larr; Voltar
+                &larr; @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar
             </a>
         @endif
 
@@ -91,15 +163,20 @@
             <!-- CHAVE DE ACESSO -->
             <div class="w-1/3 p-2 flex flex-col">
                 <div class="w-full mb-1 flex justify-center overflow-hidden" style="height: 40px;">
-                    {!! $barcode !!}
-                </div>
+    <div class="barcode-wrapper">
+        {!! $barcode !!}
+    </div>
+</div>
+
                 <div class="nf-label">CHAVE DE ACESSO</div>
                 <div class="nf-content bg-gray-100 text-center p-1 border border-gray-300 text-[10px] font-mono">
                     {{ implode(' ', str_split($nota->chave_acesso, 4)) }}
                 </div>
-                <div class="mt-2 text-[8px] text-center text-gray-500 uppercase">
-                    Consulta de autenticidade no portal nacional da NF-e
-                </div>
+                <div class="mt-2 text-[8px] text-center uppercase"
+     style="color: {{ Auth::user()->acessibilidade_visual ? '#ffff00' : '#555' }};">
+    Consulta de autenticidade no portal nacional da NF-e
+</div>
+
             </div>
         </div>
 

@@ -121,7 +121,25 @@
                                 {{ $s[3] ? 'bg-red-500 text-white animate-pulse shadow-sm' : 
                                   ($s[4] ? 'bg-yellow-300 text-black animate-pulse shadow-sm' :
                                   ($s[2] ? 'bg-green-400 text-black shadow-sm' : 'bg-gray-100 opacity-30')) }}">
-                                {{ $s[1] }}
+                                @if(Auth::user()->acessibilidade_visual)
+    @php
+        // Mapa de ícones em código (SVG) para garantir o amarelo puro
+        $svgsPcd = [
+            'VEND' => '<path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.407 2.67 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.407-2.67-1M12 16v1m-6-5h12"></path>',
+            'PCP'  => '<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><circle cx="12" cy="12" r="3"></circle>',
+            'COMP' => '<path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>',
+            'WMS'  => '<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>',
+            'PROD' => '<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>',
+            'PACK' => '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
+            'EXPED'=> '<path d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>'
+        ];
+    @endphp
+    <svg class="w-6 h-6" fill="none" stroke="#ffff00" stroke-width="2.5" style="filter:none!important; stroke:#ffff00!important">
+        {!! $svgsPcd[$s[0]] !!}
+    </svg>
+@else
+    {{ $s[1] }}
+@endif
                             </div>
                             <span class="text-[8px] font-black mt-1 text-gray-600">{{ $s[0] }}</span>
                         </div>
@@ -193,7 +211,15 @@
                                         </td>
                                         <td class="p-2 text-center font-black">
                                             @if($oc->status == 'Recusado')
-                                                <span class="text-red-600 border border-red-200 bg-red-50 px-2 py-0.5 rounded text-[9px]">🚫 RECUSADO</span>
+                                               @if(Auth::user()->acessibilidade_visual)
+    {{-- Versão para PCD: Sem emoji colorido, com borda amarela e texto amarelo forçado --}}
+    <span class="px-2 py-0.5 rounded text-[9px] border-2" style="color: #ffff00 !important; border-color: #ffff00 !important; background-color: #000000 !important;">
+        [X] RECUSADO
+    </span>
+@else
+    {{-- Sua versão original para o aluno comum --}}
+    <span class="text-red-600 border border-red-200 bg-red-50 px-2 py-0.5 rounded text-[9px]">🚫 RECUSADO</span>
+@endif 
                                             @elseif($oc->status == 'Concluído')
                                                 <span class="text-blue-600">✓ NO ESTOQUE</span>
                                             @else

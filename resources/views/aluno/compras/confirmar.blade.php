@@ -1,8 +1,43 @@
 <x-app-layout>
+    @php $hc = Auth::user()->acessibilidade_visual; @endphp
+
+    @if($hc)
+<style>
+
+/* Apenas ajusta as cores internas, sem tocar na barra */
+select {
+    background-color: black !important;
+    color: #FFFF00 !important;
+}
+
+select option {
+    background-color: black !important;
+    color: #FFFF00 !important;
+}
+
+select option:hover,
+select option:checked {
+    background-color: #FFFF00 !important;
+    color: black !important;
+}
+
+</style>
+@endif
+
+   
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">💰</span> {{ __('Cotação e Compra') }}
+                <span class="text-3xl">@if($hc)
+    <svg class="w-6 h-6 inline" viewBox="0 0 24 24" fill="none"
+         stroke="#FFFF00" stroke-width="2"
+         style="filter:none!important; stroke:#FFFF00!important;">
+        <path d="M12 1v22m5-18H8.5a4.5 4.5 0 000 9h7a4.5 4.5 0 010 9H7"/>
+    </svg>
+@else
+    💰
+@endif
+</span> {{ __('Cotação e Compra') }}
             </h2>
 
             {{-- NAVEGAÇÃO INTELIGENTE --}}
@@ -14,7 +49,18 @@
             @else
                 <a href="{{ route('aluno.compras.dashboard', ['tela' => 'cotacao']) }}" 
                    class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Voltar
+                    @if($hc)
+        <!-- Seta Amarela Permanente para Alto Contraste -->
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+             stroke="#FFFF00" stroke-width="3"
+             style="filter:none!important; stroke:#FFFF00!important;">
+            <path d="M19 12H5M12 19l-7-7 7-7">/>
+        </svg>
+    @else
+        ⬅
+    @endif
+
+    Voltar 
                 </a>
             @endif
         </div>
@@ -26,7 +72,22 @@
             <!-- 1. RESUMO DA REQUISIÇÃO (FICHA TÉCNICA) -->
             <div class="bg-white border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
                 <div class="bg-purple-600 text-white p-4 border-b-4 border-black flex items-center gap-3">
-                    <span class="text-2xl">📋</span>
+                    <span class="text-2xl">
+@if($hc)
+    <svg class="w-6 h-6 inline" viewBox="0 0 24 24" fill="none"
+         stroke="#FFFF00" stroke-width="2"
+         style="filter:none!important; stroke:#FFFF00!important; background-color:transparent!important;">
+        <rect x="9" y="2" width="6" height="4"></rect>
+        <rect x="4" y="4" width="16" height="18"></rect>
+        <line x1="8" y1="10" x2="16" y2="10"></line>
+        <line x1="8" y1="14" x2="16" y2="14"></line>
+        <line x1="8" y1="18" x2="13" y2="18"></line>
+    </svg>
+@else
+    📋
+@endif
+</span>
+
                     <div>
                         <h3 class="font-black text-xl uppercase tracking-tighter">Requisição de Compra #{{ $compra->id }}</h3>
                         <p class="text-xs text-purple-200 font-bold uppercase">Detalhes da Necessidade</p>
@@ -57,7 +118,19 @@
             <!-- 2. PAINEL DE COTAÇÃO (FILTROS) -->
             <div class="bg-gray-100 border-4 border-black rounded-xl p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]">
                 <h4 class="font-black text-lg text-gray-800 uppercase mb-4 flex items-center gap-2">
-                    <span>🔍</span> Análise de Mercado (Filtros)
+                   <span>
+@if($hc)
+    <svg class="w-5 h-5 inline mr-1" viewBox="0 0 24 24" fill="none"
+         stroke="#FFFF00" stroke-width="2"
+         style="filter:none!important; stroke:#FFFF00!important; background-color:transparent!important;">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+@else
+    🔍
+@endif
+</span> Análise de Mercado (Filtros)
+ 
                 </h4>
                 
                 <form method="GET" action="{{ route('aluno.compras.confirmar', $compra->id) }}">
@@ -66,14 +139,31 @@
                         <!-- Busca -->
                         <div>
                             <label class="block text-[10px] font-black text-gray-600 uppercase mb-1">Buscar Fornecedor</label>
-                            <input type="text" name="filtro_nome" value="{{ request('filtro_nome') }}" class="w-full border-2 border-black rounded p-2 text-sm font-bold focus:ring-0 focus:border-purple-600" placeholder="Nome...">
+                            <input type="text" name="filtro_nome" value="{{ request('filtro_nome') }}"
+       class="w-full border-2 rounded p-2 text-sm font-bold focus:ring-0
+       {{ $hc ? 'bg-black text-[#FFFF00] border-[#FFFF00] placeholder-[#FFFF00] focus:border-[#FFFF00]' : 'bg-white text-black border-black focus:border-purple-600' }}"
+       placeholder="Nome...">
+
                         </div>
 
                         <!-- Ordenar -->
                         <div>
                             <label class="block text-[10px] font-black text-gray-600 uppercase mb-1">Ordenar Por</label>
                             <select name="ordenar_por" class="w-full border-2 border-black rounded p-2 text-sm font-bold focus:ring-0 focus:border-purple-600">
-                                <option value="preco_unitario" @selected(request('ordenar_por') == 'preco_unitario' || !request('ordenar_por'))>💰 Menor Preço</option>
+                                <option value="preco_unitario"
+        @selected(request('ordenar_por') == 'preco_unitario' || !request('ordenar_por'))>
+    @if($hc)
+        <!-- Ícone amarelo substituindo o emoji -->
+        <svg class="inline w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+             style="filter:none!important; stroke:#FFFF00!important;">
+            <path d="M12 1v22m5-18H8.5a4.5 4.5 0 000 9h7a4.5 4.5 0 010 9H7"/>
+        </svg>
+        Menor Preço
+    @else
+        💰 Menor Preço
+    @endif
+</option>
+
                                 <option value="tempo_entrega_dias" @selected(request('ordenar_por') == 'tempo_entrega_dias')>🚚 Menor Prazo</option>
                             </select>
                         </div>
@@ -107,24 +197,34 @@
                 <div class="bg-white border-4 border-black rounded-xl shadow-[10px_10px_0px_0px_rgba(34,197,94,1)] overflow-hidden">
                     <div class="bg-green-100 p-8">
                         <label class="block text-2xl font-black text-green-900 mb-4 uppercase tracking-tight flex items-center gap-2">
-                            <span>✅</span> Selecione o Fornecedor Vencedor
+                           <span>
+@if($hc)
+    <svg class="w-5 h-5 inline mr-1" viewBox="0 0 24 24" fill="none"
+         stroke="#FFFF00" stroke-width="2"
+         style="filter:none!important; stroke:#FFFF00!important; background-color:transparent!important;">
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+@else
+    ✅
+@endif
+</span> Selecione o Fornecedor Vencedor
+ 
                         </label>
                         
                         <div class="relative">
-                            <select name="fornecedor_id" class="block w-full border-4 border-black rounded-xl shadow-lg focus:ring-0 focus:border-green-600 p-4 text-lg font-bold bg-white appearance-none cursor-pointer" required size="5">
-                                @forelse($fornecedores as $forn)
-                                    @php
-                                        $custoTotal = $forn->preco_unitario * $compra->quantidade;
-                                    @endphp
-                                    <option value="{{ $forn->id }}" class="py-2 px-2 border-b border-gray-100 hover:bg-green-50">
-                                        {{ str_pad($forn->nome_razao_social, 30) }} 
-                                        | Prazo: {{ str_pad($forn->tempo_entrega_dias . ' dias', 10) }} 
-                                        | Total: R$ {{ number_format($custoTotal, 2, ',', '.') }}
-                                    </option>
-                                @empty
-                                    <option value="" disabled>⛔ NENHUM FORNECEDOR DISPONÍVEL PARA ESTE ITEM!</option>
-                                @endforelse
+                         <select name="fornecedor_id" class="block w-full border-4 border-black rounded-xl shadow-lg focus:ring-0 focus:border-green-600 p-4 text-lg font-bold bg-white appearance-none cursor-pointer" required size="5">
+                             @forelse($fornecedores as $forn) @php $custoTotal = $forn->preco_unitario * $compra->quantidade; @endphp 
+                             <option value="{{ $forn->id }}" 
+                             class="py-2 px-2 border-b border-gray-100 hover:bg-green-50"> {{ str_pad($forn->nome_razao_social, 30) }} | Prazo: {{ str_pad($forn->tempo_entrega_dias . ' dias', 10) }} | Total: R$ {{ number_format($custoTotal, 2, ',', '.') }} 
+                            </option>
+                             @empty 
+                             <option value="" disabled>⛔ NENHUM FORNECEDOR DISPONÍVEL PARA ESTE ITEM!
+
+                             </option> 
+                             @endforelse 
                             </select>
+
+
                             
                             {{-- Aviso se vazio --}}
                             @if($fornecedores->isEmpty())
@@ -146,7 +246,20 @@
                         
                         @if($fornecedores->isNotEmpty())
                             <button type="submit" class="px-8 py-3 bg-green-600 text-white border-2 border-black shadow-[4px_4px_0px_0px_black] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] rounded font-black uppercase text-sm transition flex items-center gap-2">
-                                <span>✍️</span> Assinar Contrato de Compra
+                             <span>
+@if($hc)
+    <svg class="w-5 h-5 inline" viewBox="0 0 24 24" fill="none"
+         stroke="#FFFF00" stroke-width="2"
+         style="filter:none!important; stroke:#FFFF00!important; background-color:transparent!important;">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+    </svg>
+@else
+    ✍️
+@endif
+</span> Assinar Contrato de Compra
+
+  
                             </button>
                         @endif
                     </div>

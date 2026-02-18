@@ -2,13 +2,29 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">🚚</span> {{ __('Meus Fornecedores') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <rect x="1" y="3" width="15" height="13"></rect>
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+    </svg>
+@else
+    <span class="text-3xl">🚚</span>
+@endif {{ __('Meus Fornecedores') }}
             </h2>
             
             {{-- BOTÃO VOLTAR PADRÃO INDUSTRIAL --}}
             <button onclick="history.back()" 
                class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                ⬅ Voltar
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="4" style="stroke:#FFFF00!important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif 
+Voltar
             </button>
         </div>
     </x-slot>
@@ -40,7 +56,15 @@
                     }
                  }">
                 <div class="bg-indigo-600 text-white p-4 border-b-4 border-black flex items-center gap-2">
-                    <span class="text-2xl">📝</span>
+                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+        <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"></path>
+    </svg>
+@else
+    <span class="text-2xl">📝</span>
+@endif
                     <h3 class="font-black text-lg uppercase tracking-wide">Cadastrar Novo Fornecedor</h3>
                 </div>
                 
@@ -71,7 +95,14 @@
                             <!-- 2. Condições Comerciais -->
                             <div class="bg-blue-50 p-4 rounded-lg border-2 border-black shadow-sm">
                                 <h4 class="text-xs font-black text-blue-800 uppercase mb-3 border-b border-blue-200 pb-1 flex items-center gap-2">
-                                    <span>💰</span> Dados Comerciais
+                                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-5 h-5 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <line x1="12" y1="1" x2="12" y2="23"></line>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+    </svg>
+@else
+    <span>💰</span>
+@endif Dados Comerciais
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
@@ -99,7 +130,14 @@
                             <!-- 3. Endereço -->
                             <div class="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-400">
                                 <h4 class="text-xs font-black text-gray-600 uppercase mb-3 flex items-center gap-2">
-                                    <span>📍</span> Endereço
+                                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+    </svg>
+@else
+    <span>📍</span>
+@endif Endereço
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div>
@@ -132,7 +170,15 @@
 
                         <div class="flex justify-end mt-8">
                             <button type="button" @click="abrirConfirmacao()" class="bg-purple-600 hover:bg-purple-700 text-white font-black py-3 px-8 rounded border-2 border-black shadow-[4px_4px_0px_0px_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition uppercase text-xs flex items-center gap-2">
-                                <span>💾</span> Salvar Fornecedor
+                                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+    </svg>
+@else
+    <span>💾</span>
+@endif Salvar Fornecedor
                             </button>
                         </div>
                     </form>
@@ -207,7 +253,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-black text-white uppercase text-xs">
+                        <thead class="bg-black text-white uppercase text-xs" style="{{ Auth::user()->acessibilidade_visual ? 'border-bottom: 2px solid #FFFF00 !important;' : '' }}">
                             <tr>
                                 <th class="py-3 px-4 text-left">Fornecedor</th>
                                 <th class="py-3 px-4 text-left">Especialidade</th>

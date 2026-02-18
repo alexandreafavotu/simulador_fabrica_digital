@@ -2,7 +2,24 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📦</span> {{ __('WMS - Recebimento e Armazenagem') }}
+                <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
+    @if(Auth::user()->acessibilidade_visual)
+        {{-- Ícone WMS amarelo (PCD) --}}
+        <svg class="w-8 h-8"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="#FFFF00"
+             stroke-width="2"
+             style="fill:none!important; stroke:#FFFF00!important; filter:none!important;">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73L12 2 4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73L12 22l8-4.27A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12 20.73 6.96"/>
+            <line x1="12" y1="22" x2="12" y2="12"/>
+        </svg>
+    @else
+        <span class="text-3xl">📦</span>
+    @endif
+    {{ __('WMS - Recebimento e Armazenagem') }}
+</h2>
             </h2>
             
             {{-- BOTÃO VOLTAR EM ESCADA --}}
@@ -15,7 +32,15 @@
                 @else
                     <a href="{{ route('professor.monitoramento.index', $aluno->turma_id) }}" 
                        class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                        ⬅ Sair do Setor
+                        @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Sair do Setor
                     </a>
                 @endif
             @elseif(isset($modo) && $modo != 'menu')
@@ -33,7 +58,22 @@
             {{-- ALERTA DE CAOS (PRESERVADO) --}}
             @if($aluno->turma->mensagem_plantao_caos)
                 <div class="bg-red-500 text-white p-5 border-4 border-black shadow-[8px_8px_0px_0px_black] flex items-start gap-4 animate-pulse">
-                    <span class="text-3xl">📢</span>
+                    @if(Auth::user()->acessibilidade_visual)
+    {{-- Ícone de megafone amarelo (PCD) --}}
+    <svg class="w-8 h-8"
+         viewBox="0 0 24 24"
+         fill="none"
+         stroke="#FFFF00"
+         stroke-width="2"
+         style="fill:none!important; stroke:#FFFF00!important; filter:none!important;">
+        <path d="M11 5L6 9H2V15H6L11 19V5Z"></path>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+@else
+    <span class="text-3xl">📢</span>
+@endif
+
                     <div>
                         <h3 class="font-black text-xl uppercase tracking-tighter">Plantão do Almoxarifado:</h3>
                         <p class="font-bold text-lg leading-tight">{{ $aluno->turma->mensagem_plantao_caos }}</p>
@@ -84,11 +124,36 @@
                 {{-- BOTÕES DE AÇÃO RÁPIDA (TOPO) --}}
                 <div class="flex justify-end gap-4 mb-6">
                     <a href="{{ $rotaEstoque }}" class="bg-white text-gray-800 px-6 py-2 rounded border-2 border-black shadow-[4px_4px_0px_0px_black] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                        📋 Ver Inventário
-                    </a>
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+             style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+            <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+            <line x1="8" y1="7" x2="16" y2="7"></line>
+            <line x1="8" y1="11" x2="16" y2="11"></line>
+            <line x1="8" y1="15" x2="14" y2="15"></line>
+        </svg>
+    @else
+        <span>📋</span>
+    @endif
+    <span>Ver Inventário</span>
+</a>
+
                     <a href="{{ $rotaMapa }}" class="bg-indigo-600 text-white px-6 py-2 rounded border-2 border-black shadow-[4px_4px_0px_0px_black] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                        🗺️ Abrir Mapa WMS
-                    </a>
+    @if(Auth::user()->acessibilidade_visual)
+        {{-- Ícone Mapa WMS amarelo (PCD) --}}
+        <svg class="w-5 h-5" viewBox="0 0 24 24"
+             fill="none" stroke="#FFFF00" stroke-width="2"
+             style="fill:none!important; stroke:#FFFF00!important; filter:none!important;">
+            <polygon points="1 6 8 3 16 6 23 3 23 18 16 21 8 18 1 21 1 6"></polygon>
+            <line x1="8" y1="3" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="21"></line>
+        </svg>
+    @else
+        <span>🗺️</span>
+    @endif
+    <span>Abrir Mapa WMS</span>
+</a>
+
                 </div>
 
                 {{-- ÁREA DE RECEBIMENTO --}}
@@ -96,10 +161,28 @@
                     
                   {{-- COLUNA 1: CHECKLIST DE ENTRADA (COM TRAVA DE INCONFORMIDADE) --}}
                     <div class="md:col-span-2 bg-white rounded-xl border-4 border-black shadow-[8px_8px_0px_0px_black] overflow-hidden">
-                        <div class="p-4 bg-yellow-400 border-b-4 border-black flex items-center gap-2">
-                            <span class="text-2xl">📥</span>
-                            <h3 class="font-black text-lg uppercase tracking-tighter">Checklist de Entrada (Conferência)</h3>
-                        </div>
+                        <div class="p-4 border-b-4 flex items-center gap-2
+    {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-yellow-400 border-black' }}">
+    
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+            <path d="M12 3v10"></path>
+            <path d="M8 11l4 4 4-4"></path>
+            <path d="M4 17h16"></path>
+            <path d="M6 21h12"></path>
+        </svg>
+    @else
+        <span class="text-2xl">📥</span>
+    @endif
+
+    <h3 class="font-black text-lg uppercase tracking-tighter
+        {{ Auth::user()->acessibilidade_visual ? 'text-yellow-300' : 'text-black' }}">
+        Checklist de Entrada (Conferência)
+    </h3>
+</div>
+
                         <div class="p-6">
                             @if($entregas->isEmpty())
                                 <div class="text-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded">
@@ -127,12 +210,32 @@
                                                         @if($item->tem_inconformidade)
                                                             {{-- Se tem defeito: HABILITA RECUSA --}}
                                                             <a href="{{ route('aluno.almoxarifado.recusar', $item->id) }}" class="flex-1 text-center bg-red-500 hover:bg-red-600 text-white border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-[1px] text-xs font-black py-2 px-4 rounded transition uppercase animate-bounce">
-                                                                ❌ Recusar
+                                                                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
+         style="filter:none!important; stroke:#FFFF00!important;">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+@else
+    ❌
+@endif
+Recusar
+
                                                             </a>
                                                         @else
                                                             {{-- Se normal: BLOQUEIA RECUSA --}}
                                                             <button disabled class="flex-1 bg-gray-200 text-gray-400 border-2 border-gray-300 text-xs font-black py-2 px-4 rounded cursor-not-allowed uppercase">
-                                                                ❌ Recusar
+                                                               @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
+         style="filter:none!important; stroke:#FFFF00!important;">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+@else
+    ❌
+@endif
+Recusar
+ 
                                                             </button>
                                                         @endif
 
@@ -147,7 +250,16 @@
                                                             <form action="{{ route('aluno.almoxarifado.receber', $item->id) }}" method="POST" class="flex-1">
                                                                 @csrf
                                                                 <button class="w-full bg-green-500 hover:bg-green-600 text-white border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-[1px] text-xs font-black py-2 px-4 rounded transition uppercase">
-                                                                    ✅ Receber
+                                                                  @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
+         style="filter:none!important; stroke:#FFFF00!important;">
+        <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+@else
+    ✅
+@endif
+Receber
+  
                                                                 </button>
                                                             </form>
                                                         @endif
@@ -184,15 +296,64 @@
                                 <div class="bg-green-100 p-6 rounded-xl border-4 border-green-500 mb-4 shadow-inner">
                                     {{-- CAMINHÃO PULANDO (ANIMATE-BOUNCE) --}}
                                     <div class="animate-bounce">
-                                        <span class="text-6xl drop-shadow-md">🚚</span>
-                                    </div>
+    @if(Auth::user()->acessibilidade_visual)
+        {{-- Ícone Caminhão amarelo (PCD) --}}
+        <svg class="w-16 h-16 mx-auto"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="#FFFF00"
+             stroke-width="2"
+             style="fill:none!important; stroke:#FFFF00!important; filter:none!important;">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+        </svg>
+    @else
+        <span class="text-6xl drop-shadow-md">🚚</span>
+    @endif
+</div>
+
                                     
                                     <span class="block font-black text-green-800 mt-2 uppercase tracking-widest">Caminhão na Doca</span>
                                     <span class="text-xs text-green-700 font-bold">Aguardando conferência</span>
                                 </div>
                             @else
                                 <div class="bg-gray-50 p-6 rounded-xl border-4 border-dashed border-gray-300 mb-4 opacity-70">
-                                    <span class="text-6xl grayscale opacity-50">🚫</span>
+                                    @if(Auth::user()->acessibilidade_visual)
+    {{-- Ícone PROIBIDO amarelo (PCD) - sem preenchimento --}}
+    <svg class="w-16 h-16 mx-auto"
+         viewBox="0 0 24 24"
+         style="fill:none!important; stroke:#FFFF00!important; filter:none!important;"
+         xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="9"
+                style="fill:none!important; stroke:#FFFF00!important;"
+                stroke-width="2" />
+        <path d="M7.5 7.5L16.5 16.5"
+              style="fill:none!important; stroke:#FFFF00!important;"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round" />
+    </svg>
+@else
+    @if(Auth::user()->acessibilidade_visual)
+        {{-- Ícone amarelo acessível --}}
+        <svg class="w-16 h-16 mx-auto opacity-70"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="#FFFF00"
+             stroke-width="2"
+             style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+            <circle cx="12" cy="12" r="9"></circle>
+            <line x1="7" y1="7" x2="17" y2="17"></line>
+        </svg>
+    @else
+        <span class="text-6xl grayscale opacity-50">🚫</span>
+    @endif
+@endif
+
+
+
                                     <span class="block font-bold text-gray-500 mt-2 uppercase">Doca Livre</span>
                                     <span class="text-xs text-gray-400">Aguardando próximas compras</span>
                                 </div>
@@ -214,9 +375,27 @@
                 <a href="{{ $rotaSeparacao }}" 
                    class="group bg-blue-600 border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_black] hover:bg-blue-700 active:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-150 relative overflow-hidden flex items-center justify-between p-6">
                     <div class="flex items-center gap-5">
-                        <div class="bg-white p-4 rounded-full border-2 border-black group-hover:scale-110 transition">
-                            <span class="text-3xl">📤</span>
-                        </div>
+                        <div class="p-4 rounded-full border-2 group-hover:scale-110 transition
+    {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-white border-black' }}">
+    
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-8 h-8"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="#FFFF00"
+             stroke-width="2"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+            <path d="M12 3v12"></path>
+            <path d="M7 10l5 5 5-5"></path>
+            <path d="M5 21h14"></path>
+        </svg>
+    @else
+        <span class="text-3xl">📤</span>
+    @endif
+</div>
+
                         <div>
                             <h3 class="text-2xl font-black text-white tracking-tighter uppercase">
                                 Pedidos da Produção (Picking)
@@ -247,7 +426,16 @@
             @if($modo == 'separacao')
                 <div class="bg-white border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_black] overflow-hidden">
                     <div class="bg-blue-600 text-white p-4 border-b-4 border-black flex items-center gap-2">
-                        <span class="text-2xl">📤</span>
+                        @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2">
+        <path d="M12 3v12"></path>
+        <path d="M7 10l5 5 5-5"></path>
+        <path d="M5 21h14"></path>
+    </svg>
+@else
+    <span class="text-2xl">📤</span>
+@endif
+
                         <h3 class="font-black text-xl uppercase tracking-tighter">Fila de Separação (Picking List)</h3>
                     </div>
 
@@ -282,7 +470,16 @@
                                                 <td class="px-6 py-4 text-center">
                                                     @if(Auth::user()->tipo == 'aluno')
                                                         <a href="{{ route('aluno.almoxarifado.separar', $sol->id) }}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-[1px] text-xs font-black uppercase transition flex items-center justify-center gap-2">
-                                                            <span>🗺️</span> Localizar
+                                                            @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00;">
+        <polygon points="1 6 8 3 16 6 23 3 23 18 16 21 8 18 1 21"/>
+        <line x1="8" y1="3" x2="8" y2="18"/>
+        <line x1="16" y1="6" x2="16" y2="21"/>
+    </svg>
+@else
+    <span>🗺️</span>
+@endif
+Localizar
                                                         </a>
                                                     @else
                                                         <span class="text-gray-400 text-xs italic font-bold uppercase">Visão Mestre</span>

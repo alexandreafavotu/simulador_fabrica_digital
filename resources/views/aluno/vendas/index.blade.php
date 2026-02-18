@@ -2,7 +2,13 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">💰</span> {{ __('Módulo Comercial / Vendas') }} 
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+        <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.407 2.67 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.407-2.67-1M12 16v1m-6-5h12"></path>
+    </svg>
+@else
+    <span class="text-3xl">💰</span>
+@endif {{ __('Módulo Comercial / Vendas') }} 
             </h2>
             
             @if(Auth::user()->tipo == 'professor')
@@ -15,7 +21,13 @@
                 {{-- Botão Voltar Industrial para Aluno --}}
                 <a href="{{ url()->current() }}" 
                    class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Menu Vendas
+                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Menu Vendas
                 </a>
             @endif
         </div>
@@ -109,9 +121,24 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tela' => 'novo'])) }}" 
                        class="group bg-white border-4 border-black p-8 shadow-[10px_10px_0px_0px_rgba(34,197,94,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-green-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-green-400 transition">
-                                <span class="text-5xl">➕</span>
-                            </div>
+                            <div class="flex items-center gap-3 border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-green-100 group-hover:bg-green-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter:none!important; stroke:#ffff00 !important;">
+            <path d="M12 5v14M5 12h14"></path>
+        </svg>
+    @else
+        <span class="text-5xl">➕</span>
+    @endif
+    
+
+    {{-- 2. O PICTOGRAMA (Só aparece se o botão de Pictogramas estiver ON) --}}
+    @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/pictogramas/abrir_vendas.png') }}" 
+             class="w-20 h-20 object-contain {{ Auth::user()->acessibilidade_visual ? 'img-pcd-yellow' : '' }}">
+    @endif
+</div>
+
+
                             <h4 class="text-2xl font-black text-gray-800 uppercase leading-none">Abrir Venda</h4>
                             <p class="text-sm font-bold text-gray-500 mt-2">Registrar entrada de novo pedido de cliente.</p>
                         </div>
@@ -121,9 +148,16 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tela' => 'historico'])) }}" 
                        class="group bg-white border-4 border-black p-8 shadow-[10px_10px_0px_0px_rgba(59,130,246,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-blue-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-blue-400 transition">
-                                <span class="text-5xl">📋</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-blue-100 group-hover:bg-blue-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Prancheta Amarela para PCD -->
+        <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00 !important;">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+    @else
+        <span class="text-5xl">📋</span>
+    @endif
+</div>
                             <h4 class="text-2xl font-black text-gray-800 uppercase leading-none">Gerenciar Carteira</h4>
                             <p class="text-sm font-bold text-gray-500 mt-2">Consultar status e histórico de pedidos ativos.</p>
                             <div class="flex gap-2 mt-4">
@@ -172,9 +206,17 @@
      }">
                     
                     <div class="bg-green-500 text-white p-4 border-b-4 border-black flex items-center gap-2">
-                        <span class="text-2xl">📝</span>
-                        <h3 class="font-black text-lg uppercase">Registro de Ordem de Venda</h3>
-                    </div>
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Ícone em código Amarelo para PCD -->
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00 !important;">
+            <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+    @else
+        <!-- Seu emoji original -->
+        <span class="text-2xl">📝</span>
+    @endif
+    <h3 class="font-black text-lg uppercase">Registro de Ordem de Venda</h3>
+</div>
 
                     <div class="p-8">
                         @if(Auth::user()->tipo == 'professor')
@@ -230,7 +272,13 @@
                                             
                                             @if(Auth::user()->tipo == 'aluno')
                                                 <button type="button" @click="itens = itens.filter((_, i) => i !== index)" class="bg-white border-2 border-black p-2 rounded text-red-600 hover:bg-red-50" x-show="itens.length > 1">
-                                                    🗑️
+                                                   @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00 !important;">
+        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+    </svg>
+@else
+    🗑️
+@endif 
                                                 </button>
                                             @endif
                                         </div>
@@ -268,7 +316,14 @@
                                             @endif
                                             {{-- Botão que dispara o Modal --}}
                                             <button type="button" @click="abrirConfirmacao()" class="bg-green-600 text-white font-black py-4 px-12 rounded border-2 border-black shadow-[6px_6px_0px_0px_black] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition uppercase tracking-widest">
-                                                🚀 Finalizar Pedido
+                                            @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-5 h-5 inline mr-2" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="3" style="filter:none!important; stroke:#ffff00 !important;">
+        <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+    </svg>
+@else
+    🚀
+@endif 
+Finalizar Pedido    
                                             </button>
                                         </div>
                                     @endif
@@ -290,7 +345,18 @@
                         
                         <div class="bg-white border-4 border-black p-8 max-w-md w-full shadow-[15px_15px_0px_0px_rgba(0,0,0,1)] relative">
                             <div class="text-center mb-6">
-                                <span class="text-5xl">📡</span>
+                                @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone de Antena Amarelo para o Modal -->
+    <svg class="w-16 h-16 mx-auto" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+        <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path>
+        <path d="M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0"></path>
+        <path d="M12 12l0 .01"></path>
+        <path d="M7 12a5 5 0 0 1 5 -5"></path>
+        <path d="M12 17a5 5 0 0 1 -5 -5"></path>
+    </svg>
+@else
+    <span class="text-5xl">📡</span>
+@endif
                                 <h4 class="text-2xl font-black uppercase mt-4 tracking-tighter">Transmitir Ordem?</h4>
                                 <p class="text-xs font-bold text-gray-500 uppercase italic">Revise os dados antes do envio</p>
                             </div>

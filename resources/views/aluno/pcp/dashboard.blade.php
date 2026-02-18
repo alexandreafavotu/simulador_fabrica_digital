@@ -2,7 +2,21 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📊</span> {{ __('Painel de Controle - PCP') }} 
+                @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone de Gráfico Amarelo para PCD -->
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M18 20V10M12 20V4M6 20v-6"></path>
+    </svg>
+@else
+    <span class="text-3xl">📊</span>
+@endif 
+<span 
+    tabindex="0" 
+    data-audio="Painel de Controle. {{ traduz('PCP') }}. Este é o cérebro da fábrica."
+    class="cursor-help"
+>
+    Painel de Controle - {{ traduz('PCP') }}
+</span>
             </h2>
             
             @if(Auth::user()->tipo == 'professor')
@@ -15,7 +29,15 @@
                 {{-- Botão Voltar Industrial para Aluno --}}
                 <a href="{{ url()->current() }}" 
                    class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Menu PCP
+                   @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Menu PCP
                 </a>
             @endif
         </div>
@@ -55,9 +77,16 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tabela' => 'vendas'])) }}" 
                        class="group bg-white border-4 border-black p-6 shadow-[10px_10px_0px_0px_rgba(59,130,246,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-blue-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-blue-400 transition">
-                                <span class="text-4xl">🛒</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-blue-100 group-hover:bg-blue-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Carrinho em código Amarelo para PCD -->
+        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+    @else
+        <span class="text-4xl">🛒</span>
+    @endif
+</div>
                             <h4 class="text-xl font-black text-gray-800 uppercase leading-none">Vendas</h4>
                             <p class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">Análise de Demanda Bruta</p>
                             @if($dados['qtd_vendas'] > 0)
@@ -74,9 +103,16 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tabela' => 'producao'])) }}" 
                        class="group bg-white border-4 border-black p-6 shadow-[10px_10px_0px_0px_rgba(249,115,22,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-orange-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-orange-400 transition">
-                                <span class="text-4xl">🏭</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-orange-100 group-hover:bg-orange-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Fábrica em código Amarelo para PCD -->
+        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+    @else
+        <span class="text-4xl">🏭</span>
+    @endif
+</div>
                             <h4 class="text-xl font-black text-gray-800 uppercase leading-none">Produção</h4>
                             <p class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">Gestão de Carga e Capacidade</p>
                             <span class="mt-4 bg-orange-100 text-orange-800 border border-orange-400 text-[10px] font-black px-3 py-1 rounded-full uppercase">
@@ -89,9 +125,16 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tabela' => 'compras'])) }}" 
                        class="group bg-white border-4 border-black p-6 shadow-[10px_10px_0px_0px_rgba(168,85,247,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-purple-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-purple-400 transition">
-                                <span class="text-4xl">📦</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-purple-100 group-hover:bg-purple-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Caixa em código Amarelo para PCD -->
+        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+        </svg>
+    @else
+        <span class="text-4xl">📦</span>
+    @endif
+</div>
                             <h4 class="text-xl font-black text-gray-800 uppercase leading-none">Suprimentos</h4>
                             <p class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">Status de Abastecimento</p>
                             <span class="mt-4 bg-purple-100 text-purple-800 border border-purple-400 text-[10px] font-black px-3 py-1 rounded-full uppercase">
@@ -134,6 +177,21 @@
                                         <th class="px-6 py-4 text-center">Data Prometida</th>
                                         <th class="px-6 py-4 text-center">Processamento</th>
                                     </tr>
+                                    {{-- LINHA 2: só pictogramas --}}
+    <tr class="border-b-2 border-black">
+        <th class="px-6 py-0"></th>
+        <th class="px-6 py-0"></th>
+
+        <th class="px-6 py-0 text-center">
+            @if(Auth::user()?->acessibilidade_pictogramas)
+                <img src="{{ asset('img/pictogramas/data_prometida.png') }}"
+                     class="w-20 h-20 object-contain mx-auto {{ Auth::user()->acessibilidade_visual ? 'img-pcd-yellow' : '' }}">
+            @endif
+        </th>
+
+        <th class="px-6 py-0"></th>
+    </tr>
+
                                 </thead>
                                 <tbody class="divide-y-2 divide-gray-100">
                                     @foreach($dados as $p)
@@ -219,8 +277,17 @@
                             
                             <form method="GET" action="{{ request()->url() }}" class="flex flex-wrap gap-2 items-center justify-end">
                                 <input type="hidden" name="tabela" value="compras">
-                                <input type="text" name="busca_material" placeholder="Buscar SKU/NOME..." value="{{ request('busca_material') }}" class="text-[10px] font-black border-2 border-black rounded p-1 text-black w-32 focus:ring-0">
-                                <select name="filtro_status_compra" class="text-[10px] font-black uppercase border-2 border-black rounded p-1 text-black focus:ring-0">
+                                @php $isPcd = Auth::user()->acessibilidade_visual; @endphp
+
+    <!-- 1. CAMPO DE BUSCA SKU -->
+    <input type="text" name="busca_material" placeholder="Buscar SKU/NOME..." value="{{ request('busca_material') }}" 
+           class="text-[10px] font-black border-2 rounded p-1 w-32 focus:ring-0 
+           {{ $isPcd ? 'bg-black text-yellow-400 border-yellow-400 placeholder-yellow-700' : 'text-black border-black bg-white' }}">
+
+    <!-- 2. SELETOR DE STATUS -->
+    <select name="filtro_status_compra" 
+            class="text-[10px] font-black uppercase border-2 rounded p-1 focus:ring-0
+            {{ $isPcd ? 'bg-black text-yellow-400 border-yellow-400' : 'text-black border-black bg-white' }}">
                                     <option value="">Status (Todos)</option>
                                     <option value="Pendente" {{ request('filtro_status_compra') == 'Pendente' ? 'selected' : '' }}>Pendente</option>
                                     <option value="Concluído" {{ request('filtro_status_compra') == 'Concluído' ? 'selected' : '' }}>Concluído</option>

@@ -26,6 +26,14 @@ class User extends Authenticatable
         'ano_letivo',
         'rg_finais',
         'ativo', // <--- ADICIONE ISTO
+        // NOVOS CAMPOS DE ACESSIBILIDADE
+        'acessibilidade_visual',
+        'acessibilidade_motora',
+        'acessibilidade_cognitiva',
+        // --- ADICIONE ESTAS 3 LINHAS ABAIXO ---
+        'acessibilidade_audio',
+        'acessibilidade_pictogramas',
+        'acessibilidade_libras',
     ];
 
     /**

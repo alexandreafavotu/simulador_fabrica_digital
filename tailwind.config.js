@@ -1,5 +1,6 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
+import plugin from 'tailwindcss/plugin'; // <--- 1. IMPORTAÇÃO NOVA
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -17,5 +18,12 @@ export default {
         },
     },
 
-    plugins: [forms],
+    plugins: [
+        forms,
+        
+        // 2. REGRA DO ALTO CONTRASTE
+        plugin(function({ addVariant }) {
+            addVariant('high-contrast', 'body.high-contrast &')
+        }),
+    ],
 };

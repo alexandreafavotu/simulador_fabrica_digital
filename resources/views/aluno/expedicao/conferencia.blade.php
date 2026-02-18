@@ -2,7 +2,16 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📝</span> {{ __('Conferência de Expedição') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; fill:none!important;">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+@else
+    <span class="text-3xl">📝</span>
+@endif
+ {{ __('Conferência de Expedição') }}
             </h2>
 
             {{-- BOTÃO VOLTAR --}}
@@ -14,7 +23,15 @@
             @else
                 <button onclick="history.back()" 
                    class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Cancelar
+                    @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Cancelar
                 </button>
             @endif
         </div>
@@ -48,7 +65,16 @@
                         
                         <div class="mb-8">
                             <h4 class="font-black text-lg text-gray-800 uppercase mb-4 flex items-center gap-2">
-                                <span>📦</span> Itens e Disponibilidade
+                                @if(Auth::user()->acessibilidade_visual)
+<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2">
+    <path d="M3 7l9 4 9-4"/>
+    <path d="M3 7v10l9 4 9-4V7"/>
+    <path d="M12 11v10"/>
+</svg>
+@else
+<span>📦</span>
+@endif
+ Itens e Disponibilidade
                             </h4>
                             
                             <div class="overflow-x-auto border-2 border-black rounded-lg">
@@ -126,7 +152,16 @@
                             <button type="button" 
                                     onclick="document.getElementById('modal-confirmar-fatura').showModal()"
                                     class="px-8 py-3 bg-green-600 text-white rounded border-2 border-black font-black text-sm uppercase hover:bg-green-700 shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-[1px] transition flex items-center gap-2">
-                                <span>📄</span> Emitir Nota Fiscal
+                                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; fill:none!important;">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+@else
+    <span class="text-3xl">📝</span>
+@endif
+Emitir Nota Fiscal
                             </button>
                         </div>
                     </form>

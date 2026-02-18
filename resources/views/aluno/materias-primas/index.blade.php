@@ -2,13 +2,25 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📦</span> {{ __('Cadastro de Matérias-Primas (Aluno)') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+    </svg>
+@else
+    <span class="text-3xl">📦</span>
+@endif {{ __('Cadastro de Matérias-Primas (Aluno)') }}
             </h2>
             
             {{-- BOTÃO VOLTAR PADRÃO INDUSTRIAL --}}
             <button onclick="history.back()" 
                class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                ⬅ Voltar
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter: none !important; stroke: #ffff00 !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar
             </button>
         </div>
     </x-slot>
@@ -35,7 +47,14 @@
                  }">
                 
                 <div class="bg-indigo-600 text-white p-4 border-b-4 border-black flex items-center gap-2">
-                    <span class="text-2xl">📝</span>
+                    @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone da Prancheta Amarelo -->
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+    </svg>
+@else
+    <span class="text-2xl">📝</span>
+@endif
                     <h3 class="font-black text-lg uppercase tracking-wide">Cadastrar Novo Material</h3>
                 </div>
                 
@@ -75,7 +94,8 @@
                                 <div class="flex-grow">
                                     <label class="block text-xs font-black text-gray-700 uppercase mb-1">Unidade</label>
                                     <input type="text" name="unidade_medida" x-model="unidade" required placeholder="kg, lt, un" 
-                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]">
+       class="w-full border-2 border-black p-2 rounded font-bold text-sm text-center {{ Auth::user()->acessibilidade_visual ? 'placeholder:text-yellow-400' : '' }}" 
+       style="{{ Auth::user()->acessibilidade_visual ? 'background-color: #000000 !important; color: #FFFF00 !important; border-color: #FFFF00 !important;' : '' }}">
                                 </div>
                                 {{-- Botão chama o Modal --}}
                                 <button type="button" @click="abrirConfirmacao()" 
@@ -147,7 +167,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-black text-white uppercase text-xs">
+                        <thead class="bg-black text-white uppercase text-xs" style="{{ Auth::user()->acessibilidade_visual ? 'border-bottom: 2px solid #FFFF00 !important;' : '' }}">
                             <tr>
                                 <th class="py-3 px-4 text-left">SKU</th>
                                 <th class="py-3 px-4 text-left">Nome</th>

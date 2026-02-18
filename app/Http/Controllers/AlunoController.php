@@ -139,7 +139,7 @@ class AlunoController extends Controller
 
         // 1. DADOS PADRÃO (Para os filtros)
         $clientes = Cliente::where('turma_id', $aluno->turma_id)->get();
-        $produtos = ProdutoAcabado::all();
+        $produtos = ProdutoAcabado::where('turma_id', $aluno->turma_id)->get();;
         $dataJogo = $aluno->turma->data_jogo;
 
         // 2. DESCOBRE O MODO DE VISUALIZAÇÃO (Menu, Vendas, Produção ou Compras)

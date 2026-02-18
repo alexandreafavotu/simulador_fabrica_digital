@@ -1137,6 +1137,41 @@ class ProfessorController extends Controller
         return redirect()->back()->with('success', "Regra de Mercado atualizada: Limite de {$request->limite_vendas_por_aluno} pedidos/dia por aluno.");
     }
 
-    
+    // =========================================================================
+    //  EDIÇÃO DE ALUNO E ACESSIBILIDADE
+    // =========================================================================
+
+    public function editarAluno(User $user)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+        
+        // BUSCAMOS AS TURMAS: Isso corrige o erro "Undefined variable $turmas"
+        $turmas = Turma::doProfessor()->get();
+        
+        return view('professor.alunos_edit', [
+            'aluno' => $user,
+            'turmas' => $turmas
+        ]);
+    }
+
+    public function atualizarAluno(Request $request, User $user)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        // Salvamos os campos usando o nome que está no seu HTML ('nome')
+        $user->update([
+    'name'                     => $request->nome, 
+    'acessibilidade_visual'    => $request->acessibilidade_visual,
+    'acessibilidade_motora'    => $request->acessibilidade_motora,
+    'acessibilidade_audio'       => $request->acessibilidade_audio,
+    'acessibilidade_pictogramas' => $request->acessibilidade_pictogramas,
+    'acessibilidade_libras'      => $request->acessibilidade_libras,
+    // Forçamos a cognitiva como 0 (desligada) pois ela saiu da tela
+    'acessibilidade_cognitiva'   => 0, 
+]);
+
+        return redirect()->route('professor.global.alunos')
+            ->with('success', 'Cadastro e acessibilidade atualizados!');
+    }
 
 } // <--- FIM DA CLASSE    

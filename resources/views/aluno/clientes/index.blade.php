@@ -2,13 +2,29 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">🤝</span> {{ __('Meus Clientes') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+        <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+        <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+    </svg>
+@else
+    <span class="text-3xl">🤝</span>
+@endif {{ __('Meus Clientes') }}
             </h2>
             
             {{-- BOTÃO VOLTAR PADRÃO INDUSTRIAL --}}
             <button onclick="history.back()" 
                class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                ⬅ Voltar
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="4" style="stroke:#FFFF00!important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif 
+Voltar
             </button>
         </div>
     </x-slot>
@@ -36,7 +52,15 @@
                  }">
                 
                 <div class="bg-indigo-600 text-white p-4 border-b-4 border-black flex items-center gap-2">
-                    <span class="text-2xl">📝</span>
+                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+        <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"></path>
+    </svg>
+@else
+    <span class="text-2xl">📝</span>
+@endif
                     <h3 class="font-black text-lg uppercase tracking-wide">Cadastrar Novo Cliente</h3>
                 </div>
                 
@@ -77,7 +101,14 @@
                             <!-- Endereço -->
                             <div class="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-400">
                                 <h4 class="text-xs font-black text-gray-500 uppercase mb-3 flex items-center gap-1">
-                                    <span>📍</span> Localização
+                                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+    </svg>
+@else
+    <span>📍</span>
+@endif Localização
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div class="md:col-span-1">
@@ -111,7 +142,15 @@
                             <div class="flex justify-end pt-2">
                                 {{-- Botão modificado para disparar o Modal --}}
                                 <button type="button" @click="abrirConfirmacao()" class="bg-indigo-600 text-white font-black py-3 px-8 rounded border-2 border-black shadow-[4px_4px_0px_0px_black] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition uppercase text-xs flex items-center gap-2">
-                                    <span>💾</span> Cadastrar Cliente
+                                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2" style="stroke:#FFFF00!important;">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+    </svg>
+@else
+    <span>💾</span>
+@endif Cadastrar Cliente
                                 </button>
                             </div>
                         </div>
@@ -180,7 +219,7 @@
 
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-black text-white uppercase text-xs">
+                        <thead class="bg-black text-white uppercase text-xs" style="{{ Auth::user()->acessibilidade_visual ? 'border-bottom: 2px solid #FFFF00 !important;' : '' }}">
                             <tr>
                                 <th class="py-3 px-4 text-left">Nome / Razão</th>
                                 <th class="py-3 px-4 text-left">Documento</th>

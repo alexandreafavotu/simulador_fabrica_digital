@@ -2,19 +2,38 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span>📈</span> {{ __('Análise de Necessidades (MRP)') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone de Gráfico Amarelo para PCD -->
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+    </svg>
+@else
+    <span>📈</span>
+@endif {{ __('Análise de Necessidades (MRP)') }}
             </h2>
             
             {{-- BOTÃO VOLTAR INTELIGENTE --}}
             @if(Auth::user()->tipo == 'professor')
                 <a href="{{ route('professor.monitoramento.pcp', $pedido->turma_id) }}" 
                    class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Voltar ao PCP
+                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar ao PCP
                 </a>
             @else
                 <a href="{{ route('aluno.pcp.dashboard') }}" 
                    class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Voltar ao Menu
+                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar ao Menu
                 </a>
             @endif
         </div>
@@ -110,7 +129,15 @@
                                 buttonText="SIM, GERAR AGORA"
                                 class="bg-green-600 hover:bg-green-700 text-white font-black py-4 px-12 rounded border-2 border-black shadow-[6px_6px_0px_0px_black] active:shadow-none active:translate-y-[2px] transition uppercase tracking-widest text-lg flex items-center gap-3"
                             >
-                                <span>⚙️</span> Confirmar e Gerar Ordens
+                                @if(Auth::user()->acessibilidade_visual)
+    <!-- Engrenagem Amarela para PCD -->
+    <svg class="w-6 h-6 inline mr-2" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+@else
+    <span>⚙️</span>
+@endif Confirmar e Gerar Ordens
                             </x-modal-confirmacao>
                         </div>
                     @endif

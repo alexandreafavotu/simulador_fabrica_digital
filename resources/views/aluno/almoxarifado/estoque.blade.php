@@ -1,8 +1,37 @@
 <x-app-layout>
+
+@if(Auth::user()->acessibilidade_visual)
+<style>
+    /* Placeholder amarelo */
+    input::placeholder {
+        color: #FFFF00 !important;
+        opacity: 1 !important; /* mantém visível */
+    }
+
+    /* Texto digitado também amarelo */
+    input {
+        color: #FFFF00 !important;
+        background-color: black !important;
+    }
+
+    /* Borda mantém o padrão */
+</style>
+@endif
+
+
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📋</span> {{ __('Consulta de Inventário') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone prancheta amarelo -->
+    <svg class="w-8 h-8" fill="none" stroke="#FFFF00" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+        <line x1="8" y1="7" x2="16" y2="7"></line>
+    </svg>
+@else
+    <span class="text-3xl">📋</span>
+@endif
+ {{ __('Consulta de Inventário') }}
             </h2>
 
             {{-- NAVEGAÇÃO CORRIGIDA (SEM ERRO DE SINTAXE) --}}
@@ -14,7 +43,15 @@
             @else
                 <a href="{{ route('aluno.almoxarifado.dashboard') }}" 
                    class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Voltar ao Pátio
+                    @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Voltar ao Pátio
                 </a>
             @endif
         </div>
@@ -30,7 +67,17 @@
                 <div class="bg-gray-800 text-white p-4 border-b-4 border-black flex flex-col md:flex-row justify-between items-center gap-4">
                     <div>
                         <h3 class="font-black text-xl uppercase tracking-tighter flex items-center gap-2">
-                            <span>📦</span> Estoque Atual
+                           @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-6 h-6" fill="none" stroke="#FFFF00" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M3 7l9-4 9 4v10l-9 4-9-4V7z"></path>
+        <path d="M3 7l9 5 9-5"></path>
+        <path d="M12 12v9"></path>
+    </svg>
+@else
+    <span>📦</span>
+@endif
+Estoque Atual
+ 
                         </h3>
                         <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
                             Empresa: {{ isset($turma) ? $turma->nome : ($aluno->turma->nome ?? 'N/A') }}
@@ -78,7 +125,16 @@
                                         @if($item->local)
                                             {{-- Badge de Localização (Estilo Etiqueta) --}}
                                             <span class="bg-white text-blue-800 px-3 py-1 rounded border-2 border-blue-600 font-mono font-bold text-xs shadow-[2px_2px_0px_0px_rgba(37,99,235,0.2)]">
-                                                📍 {{ $item->local->codigo_visual }}
+                                             @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" fill="none" stroke="#FFFF00" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"></path>
+        <circle cx="12" cy="9" r="2.5"></circle>
+    </svg>
+@else
+    📍
+@endif
+{{ $item->local->codigo_visual }}
+   
                                             </span>
                                         @else
                                             {{-- Badge de Alerta (No Chão) --}}

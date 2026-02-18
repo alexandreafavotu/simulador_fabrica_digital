@@ -1,21 +1,48 @@
 <x-app-layout>
+    @php
+  $hc = Auth::user()->acessibilidade_visual;
+@endphp
+
+
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">📦</span> {{ __('Painel de Compras & Suprimentos') }} 
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+    </svg>
+@else
+    <span class="text-3xl">📦</span>
+@endif {{ __('Painel de Compras & Suprimentos') }} 
             </h2>
             
             @if(Auth::user()->tipo == 'professor')
                 {{-- Botão Voltar Industrial para Professor --}}
                 <a href="{{ route('professor.monitoramento.index', $aluno->turma_id) }}" 
                    class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Sair do Setor
+                    @if($hc)
+    <svg class="w-4 h-4 inline align-middle" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4"
+         style="filter:none!important; stroke:#ffff00!important; background-color:transparent!important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif
+ Sair do Setor
                 </a>
             @elseif(isset($modo) && $modo != 'menu')
                 {{-- Botão Voltar Industrial para Aluno --}}
                 <a href="{{ url()->current() }}" 
                    class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ Menu Compras
+                    @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Menu Compras
                 </a>
             @endif
         </div>
@@ -27,7 +54,15 @@
             {{-- 1. ALERTAS DE CAOS (ESTILO INDUSTRIAL) --}}
             @if($aluno->turma->mensagem_plantao_caos)
                 <div class="bg-red-500 text-white p-5 border-4 border-black shadow-[8px_8px_0px_0px_black] flex items-start gap-4 animate-pulse">
-                    <span class="text-3xl">📢</span>
+                    @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone de Megafone Amarelo para PCD -->
+    <svg class="w-8 h-8 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M11 5L6 9H2V15H6L11 19V5Z"></path>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+@else
+    <span class="text-3xl">📢</span>
+@endif
                     <div>
                         <h3 class="font-black text-xl uppercase tracking-tighter">Plantão de Suprimentos:</h3>
                         <p class="font-bold text-lg leading-tight">{{ $aluno->turma->mensagem_plantao_caos }}</p>
@@ -55,9 +90,16 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tela' => 'cotacao'])) }}" 
                        class="group bg-white border-4 border-black p-6 shadow-[10px_10px_0px_0px_rgba(168,85,247,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-purple-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-purple-400 transition">
-                                <span class="text-4xl">💰</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-purple-100 group-hover:bg-purple-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Ícone de Dinheiro Amarelo para PCD -->
+        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00 !important; background-color: transparent !important;">
+            <path d="M12 1v22m5-18H8.5a4.5 4.5 0 000 9h7a4.5 4.5 0 010 9H7"></path>
+        </svg>
+    @else
+        <span class="text-4xl">💰</span>
+    @endif
+</div>
                             <h4 class="text-xl font-black text-gray-800 uppercase leading-none">Realizar Cotações</h4>
                             <p class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">Homologação e Compra</p>
                             
@@ -75,9 +117,16 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tela' => 'recusados'])) }}" 
                        class="group bg-white border-4 border-black p-6 shadow-[10px_10px_0px_0px_rgba(239,68,68,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-red-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-red-400 transition">
-                                <span class="text-4xl">⚠️</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-red-100 group-hover:bg-red-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Ícone de Alerta Amarelo para PCD -->
+        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00 !important; background-color: transparent !important;">
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+    @else
+        <span class="text-4xl">⚠️</span>
+    @endif
+</div>
                             <h4 class="text-xl font-black text-gray-800 uppercase leading-none">Log de Ocorrências</h4>
                             <p class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">Tratativa de Recusas</p>
                             
@@ -95,9 +144,19 @@
                     <a href="{{ route($rotaBase, array_merge($params, ['tela' => 'historico'])) }}" 
                        class="group bg-white border-4 border-black p-6 shadow-[10px_10px_0px_0px_rgba(59,130,246,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-200">
                         <div class="flex flex-col items-center text-center">
-                            <div class="bg-blue-100 border-2 border-black p-5 rounded-full mb-4 group-hover:bg-blue-400 transition">
-                                <span class="text-4xl">🚚</span>
-                            </div>
+                            <div class="border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-blue-100 group-hover:bg-blue-400' }}">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Ícone de Caminhão Amarelo para PCD -->
+        <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter:none!important; stroke:#ffff00 !important; background-color: transparent !important;">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+        </svg>
+    @else
+        <span class="text-4xl">🚚</span>
+    @endif
+</div>
                             <h4 class="text-xl font-black text-gray-800 uppercase leading-none">Histórico de Pedidos</h4>
                             <p class="text-[10px] font-bold text-gray-500 mt-2 uppercase tracking-widest">Rastreio de Entregas</p>
                             <span class="mt-4 bg-blue-100 text-blue-800 border border-blue-400 text-[10px] font-black px-3 py-1 rounded-full uppercase">
@@ -113,13 +172,18 @@
             {{-- MODO 2: TELA DE COTAÇÃO (COM DESTAQUE URGENTE)          --}}
             {{-- ======================================================= --}}
             @if($modo == 'cotacao')
-                <div class="bg-white border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_black] overflow-hidden">
+                <div class="border-4 rounded-xl overflow-hidden shadow-[8px_8px_0px_0px_black] 
+    {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-white border-black' }}">
                     <div class="bg-purple-600 text-white p-4 border-b-4 border-black flex flex-col md:flex-row justify-between items-center gap-4">
                         <h3 class="font-black text-xl uppercase tracking-tighter">Novas Solicitações (PCP)</h3>
                         
                         <form method="GET" action="{{ request()->url() }}" class="flex gap-2">
                             <input type="hidden" name="tela" value="cotacao">
-                            <input type="text" name="busca" placeholder="Buscar material..." value="{{ request('busca') }}" class="text-[10px] font-black border-2 border-black rounded p-1 text-black focus:ring-0 w-40">
+                            <input type="text" name="busca" placeholder="Buscar material..."
+       value="{{ request('busca') }}"
+       class="text-[10px] font-black border-2 rounded p-1 focus:ring-0 w-40
+       {{ $hc ? 'bg-black text-[#FFFF00] border-[#FFFF00] placeholder-[#FFFF00]' : 'bg-white text-black border-black' }}">
+
                             <button class="bg-black text-white text-[10px] px-3 rounded font-black uppercase hover:bg-gray-800 transition">Buscar</button>
                         </form>
                     </div>
@@ -188,8 +252,15 @@
                         
                         <form method="GET" action="{{ request()->url() }}" class="flex flex-wrap gap-2 items-center justify-end">
                             <input type="hidden" name="tela" value="recusados">
-                            <input type="text" name="filtro_fornecedor" placeholder="Fornecedor..." value="{{ request('filtro_fornecedor') }}" class="text-[10px] font-black border-2 border-black rounded p-1 text-black w-24 focus:ring-0">
-                            <input type="text" name="busca_material" placeholder="Material..." value="{{ request('busca_material') }}" class="text-[10px] font-black border-2 border-black rounded p-1 text-black w-24 focus:ring-0">
+                            <input type="text" name="filtro_fornecedor" placeholder="Fornecedor..." value="{{ request('filtro_fornecedor') }}"
+       class="text-[10px] font-black border-2 rounded p-1 w-24 focus:ring-0 focus:outline-none
+       {{ $hc ? 'bg-black text-[#FFFF00] border-[#FFFF00] placeholder-[#FFFF00] focus:border-[#FFFF00] focus:ring-2 focus:ring-[#FFFF00]' : 'text-black border-black bg-white focus:border-black focus:ring-2 focus:ring-black' }}">
+
+<input type="text" name="busca_material" placeholder="Material..." value="{{ request('busca_material') }}"
+       class="text-[10px] font-black border-2 rounded p-1 w-24 focus:ring-0 focus:outline-none
+       {{ $hc ? 'bg-black text-[#FFFF00] border-[#FFFF00] placeholder-[#FFFF00] focus:border-[#FFFF00] focus:ring-2 focus:ring-[#FFFF00]' : 'text-black border-black bg-white focus:border-black focus:ring-2 focus:ring-black' }}">
+
+
                             <button class="bg-black text-white text-[10px] px-3 py-1.5 rounded font-black uppercase hover:bg-gray-800 transition">Filtrar</button>
                             
                             @if(request()->anyFilled(['filtro_data', 'filtro_fornecedor', 'busca_material']))
@@ -215,8 +286,10 @@
                             </thead>
                             <tbody class="divide-y-2 divide-gray-100">
                                 @forelse($dados as $item)
-                                    <tr class="hover:bg-red-50 transition {{ $item->recompra_gerada ? 'opacity-60 grayscale' : '' }}">
-                                        <td class="px-6 py-4 font-mono text-xs font-bold text-gray-500">
+                                    <tr class="hover:bg-red-50 transition {{ $item->recompra_gerada ? ($hc ? '' : 'opacity-60 grayscale') : '' }}">
+
+                                        <td class="px-6 py-4 font-mono text-xs font-bold {{ $hc ? 'text-[#FFFF00]' : 'text-gray-500' }}">
+
                                             {{ $item->updated_at->format('d/m/Y H:i') }}
                                         </td>
                                         <td class="px-6 py-4 font-bold text-red-600 uppercase text-xs">

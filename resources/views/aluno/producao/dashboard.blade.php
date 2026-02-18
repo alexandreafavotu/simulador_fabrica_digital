@@ -2,7 +2,17 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-black text-2xl text-gray-800 leading-tight flex items-center gap-2">
-                <span class="text-3xl">🏭</span> {{ __('Chão de Fábrica - Produção') }}
+                @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; filter:none!important;">
+        <rect x="3" y="10" width="6" height="10"></rect>
+        <rect x="10" y="6" width="6" height="14"></rect>
+        <rect x="17" y="12" width="4" height="8"></rect>
+    </svg>
+@else
+    <span class="text-3xl">🏭</span>
+@endif
+ {{ __('Chão de Fábrica - Produção') }}
             </h2>
             
             {{-- LÓGICA DE NAVEGAÇÃO (MANTIDA) --}}
@@ -10,12 +20,29 @@
                 @if($modo == 'historico')
                     <a href="{{ route('professor.monitoramento.producao', $aluno->turma_id) }}" 
                        class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                        ⬅ Voltar para a Linha
+                        @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="4"
+         style="filter:none!important; stroke:#FFFF00!important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif
+Voltar para a Linha
+
                     </a>
                 @else
                     <a href="{{ route('professor.monitoramento.index', $aluno->turma_id) }}" 
                        class="bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                        ⬅ Sair do Setor
+                        @if(Auth::user()->acessibilidade_visual)
+    <!-- Seta Amarela Travada para PCD -->
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" 
+         style="filter: none !important; stroke: #ffff00 !important; background-color: transparent !important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif Sair do Setor
                     </a>
                 @endif
             @else
@@ -29,7 +56,16 @@
                     }
                 @endphp
                 <a href="{{ $rotaVoltar }}" class="bg-white text-gray-800 px-4 py-2 rounded border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-xs font-black uppercase flex items-center gap-2">
-                    ⬅ {{ $textoVoltar }}
+                    @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="4"
+         style="filter:none!important; stroke:#FFFF00!important;">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </svg>
+@else
+    ⬅
+@endif
+{{ $textoVoltar }}
+
                 </a>
             @endif
         </div>
@@ -75,7 +111,19 @@
                 <div class="bg-white border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden">
                     <div class="bg-gray-800 text-white p-4 border-b-4 border-black flex items-center justify-between">
                         <h3 class="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
-                            <span>📋</span> 1. Ordens Disponíveis (Backlog)
+                            @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-5 h-5 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; fill:none!important; filter:none!important;">
+        <rect x="6" y="4" width="12" height="16" rx="2"></rect>
+        <line x1="9" y1="8" x2="15" y2="8"></line>
+        <line x1="9" y1="12" x2="15" y2="12"></line>
+        <line x1="9" y1="16" x2="15" y2="16"></line>
+    </svg>
+@else
+    <span>📋</span>
+@endif
+
+ 1. Ordens Disponíveis (Backlog)
                         </h3>
                         <span class="bg-white text-black px-3 py-1 rounded border-2 border-black text-sm font-black shadow-[2px_2px_0px_0px_gray]">{{ $ordensDisponiveis->count() }}</span>
                     </div>
@@ -140,7 +188,18 @@
                 <div class="mt-8">
                     <div class="flex items-center justify-between mb-4 bg-indigo-600 text-white p-4 rounded-xl border-4 border-black shadow-[6px_6px_0px_0px_black]">
                         <h3 class="text-xl font-black flex items-center uppercase tracking-tighter gap-2">
-                            <span class="text-2xl">🏭</span> 2. Linhas de Produção Ativas
+                            @if(Auth::user()->acessibilidade_visual)
+    <!-- Ícone fábrica amarelo -->
+    <svg class="w-7 h-7 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+         style="stroke:#FFFF00!important; filter:none!important;">
+        <rect x="3" y="10" width="6" height="10"></rect>
+        <rect x="10" y="6" width="6" height="14"></rect>
+        <rect x="17" y="12" width="4" height="8"></rect>
+    </svg>
+@else
+    <span class="text-2xl">🏭</span>
+@endif
+ 2. Linhas de Produção Ativas
                         </h3>
                         
                         @if(Auth::user()->tipo == 'aluno')
@@ -236,7 +295,17 @@
                                                                     </form>
                                                                 @elseif($op->status_material == 'Solicitado')
                                                                     <div class="text-center bg-orange-100 border-2 border-orange-300 p-1 rounded">
-                                                                        <p class="text-[9px] font-black text-orange-700 uppercase animate-pulse">⏳ Aguardando WMS</p>
+                                                                        <p class="text-[9px] font-black text-orange-700 uppercase animate-pulse"><p class="text-[9px] font-black text-orange-700 uppercase animate-pulse">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-3 h-3 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="2"
+             style="stroke:#FFFF00!important; filter:none!important;">
+            <path d="M6 2h12v4l-4 4 4 4v4H6v-4l4-4-4-4V2z"></path>
+        </svg>
+    @else
+        ⏳
+    @endif
+    Aguardando WMS
+</p>
                                                                     </div>
                                                                 @elseif($op->status_material == 'Entregue')
                                                                     <form action="{{ route('aluno.producao.iniciar', $op->id) }}" method="POST"> 
@@ -294,9 +363,19 @@
                 <a href="{{ $urlHistorico }}" class="group block bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(239,68,68,1)] rounded-xl hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition duration-200 mt-12 overflow-hidden">
                     <div class="p-6 flex items-center justify-between bg-white group-hover:bg-red-50 transition">
                         <div class="flex items-center gap-6">
-                            <div class="bg-red-100 p-4 rounded-full border-2 border-black text-red-600 text-3xl">
-                                📉
-                            </div>
+                            <div class="bg-red-100 p-4 rounded-full border-2 border-black text-red-600 text-3xl flex items-center justify-center">
+    @if(Auth::user()->acessibilidade_visual)
+        <!-- Ícone amarelo de gráfico para PCD -->
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
+             style="stroke:#FFFF00!important; filter:none!important;">
+            <polyline points="3 17 9 11 13 15 21 7"></polyline>
+            <circle cx="21" cy="7" r="1.5"></circle>
+        </svg>
+    @else
+        📉
+    @endif
+</div>
+
                             <div>
                                 <h3 class="text-2xl font-black text-gray-800 uppercase tracking-tight">Qualidade & Refugo</h3>
                                 <p class="text-gray-500 text-sm font-bold uppercase">Acessar histórico de apontamentos e perdas.</p>

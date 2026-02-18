@@ -150,6 +150,11 @@ Route::delete('/professor/turmas/{turma}', [ProfessorController::class, 'excluir
             ->middleware(\App\Http\Middleware\ProtecaoSenhaMestra::class)
             ->name('professor.fornecedores.destroy');
 
+
+            // Rotas para Gerenciar Acessibilidade do Aluno
+Route::get('/professor/alunos/{user}/editar', [App\Http\Controllers\ProfessorController::class, 'editarAluno'])->name('professor.alunos.editar');
+Route::put('/professor/alunos/{user}/atualizar', [App\Http\Controllers\ProfessorController::class, 'atualizarAluno'])->name('professor.alunos.atualizar');
+
             // Rota para salvar o Limite de Vendas Diárias
 Route::put('/professor/turmas/{id}/limite-vendas', [ProfessorController::class, 'atualizarLimiteVendas'])->name('professor.turmas.limite_vendas');
 
