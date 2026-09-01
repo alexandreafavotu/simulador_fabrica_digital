@@ -47,6 +47,21 @@
                 </div>
             @endif
 
+            {{-- Alertas de Sucesso/Erro --}}
+@if(session('success'))
+    <div class="bg-green-500 text-white p-4 border-4 border-black mb-4 font-black uppercase">
+        ✅ {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="bg-red-500 text-white p-4 border-4 border-black mb-4 font-black uppercase">
+        ❌ {{ session('error') }}
+    </div>
+@endif
+
+
+
             @php
                 $bloqueioSistema = false;
                 if(isset($aluno->turma->bloqueio_faturamento_ate)) {
@@ -124,18 +139,14 @@
                             <div class="flex items-center gap-3 border-2 border-black p-5 rounded-full mb-4 transition {{ Auth::user()->acessibilidade_visual ? 'bg-black border-yellow-400' : 'bg-green-100 group-hover:bg-green-400' }}">
     @if(Auth::user()->acessibilidade_visual)
         <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="4" style="filter:none!important; stroke:#ffff00 !important;">
-            <path d="M12 5v14M5 12h14"></path>
-        </svg>
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
     @else
-        <span class="text-5xl">➕</span>
+        <span class="text-5xl">🏷️</span>
     @endif
     
 
-    {{-- 2. O PICTOGRAMA (Só aparece se o botão de Pictogramas estiver ON) --}}
-    @if(Auth::user()?->acessibilidade_pictogramas)
-        <img src="{{ asset('img/pictogramas/abrir_vendas.png') }}" 
-             class="w-20 h-20 object-contain {{ Auth::user()->acessibilidade_visual ? 'img-pcd-yellow' : '' }}">
-    @endif
+    
 </div>
 
 
@@ -173,6 +184,160 @@
             {{-- MODO 2: FORMULÁRIO DE NOVO PEDIDO (COM MODAL DE CONFIRMAÇÃO) --}}
             {{-- ======================================================= --}}
             @if($modo == 'novo')
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+            @if(Auth::user()->acessibilidade_visual)
+    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+        <path d="M22 6s-4.47 0-7 2c-2.53 2-4 3-4 3l-2 2H3c-1.1 0-2 .9-2 2v5c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V9s1.35-1.35 3-3V2h-2v4z"></path>
+    </svg>
+@else
+    <span class="text-2xl">📬</span>
+@endif
+            <h3 class="font-black text-xl uppercase tracking-tighter text-gray-800">Mural de Solicitações do Mercado</h3>
+            
+
+           {{-- 2. O PICTOGRAMA (Só aparece se o botão de Pictogramas estiver ON) --}}
+    @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/vendas/analise_de_demanda.png') }}" 
+             class="w-20 h-20 object-contain {{ Auth::user()->acessibilidade_visual ? 'img-pcd-yellow' : '' }}">
+    @endif 
+        </div>
+        @if(isset($dadosStats['limite_info']))
+    <div class="text-[10px] font-black bg-white border-2 border-black px-2 py-1 uppercase">
+        Cota Disponível: {{ ($dadosStats['limite_info']['total'] - $dadosStats['limite_info']['usado']) }} pedidos
+    </div>
+@else
+    <div class="text-[10px] font-black bg-yellow-300 border-2 border-black px-2 py-1 uppercase">
+        👁️ Visão do Professor
+    </div>
+@endif
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @foreach($demandasMercado as $demanda)
+            @php
+                $meu = $demanda->aluno_id == $aluno->id;
+                $deOutro = $demanda->aluno_id && $demanda->aluno_id != $aluno->id;
+                $disponivel = !$demanda->aluno_id;
+                $cotaCheia = $dadosStats['limite_info']['bloqueado'] ?? false;
+            @endphp
+
+            {{-- Só mostramos os que estão disponíveis OU os que são DESTE aluno --}}
+            @if(!$deOutro)
+                <div class="border-4 border-black p-4 relative {{ $meu ? 'bg-green-50 shadow-[6px_6px_0px_0px_rgba(34,197,94,1)]' : 'bg-white shadow-[6px_6px_0px_0px_black]' }}">
+                    
+                    {{-- Status visual --}}
+                    <div class="absolute top-0 right-0 px-2 py-1 border-l-4 border-b-4 border-black font-black text-[8px] uppercase {{ $meu ? 'bg-green-500 text-white' : 'bg-yellow-400' }}">
+                        @if(Auth::user()->acessibilidade_visual)
+    @if($meu)
+        <svg class="w-3 h-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="3" style="filter: none !important; stroke: #ffff00 !important;"><path d="M20 6L9 17l-5-5"></path></svg> Seu Documento
+    @else
+        <svg class="w-3 h-3 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="3" style="filter: none !important; stroke: #ffff00 !important;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> Mercado
+    @endif
+@else
+    {{ $meu ? '✍️ Seu Documento' : '🆕 Mercado' }}
+@endif
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block text-[8px] font-black text-gray-400 uppercase">Cliente:</label>
+                        <p class="font-black text-xs uppercase">{{ $demanda->cliente->nome_razao_social }}</p>
+                    </div>
+
+                    {{-- Se for meu, eu vejo os detalhes para digitar --}}
+                    @if($meu)
+                        <div class="bg-white border-2 border-dashed border-black p-2 mt-2">
+                            <label class="block text-xs font-black text-red-500 mb-1 italic">DADOS PARA DIGITAÇÃO:</label>
+                            <p class="text-sm font-bold">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-4 h-4 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2" style="filter: none !important; stroke: #ffff00 !important;">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+    @else
+        📅 
+    @endif
+    Entrega: {{ \Carbon\Carbon::parse($demanda->data_entrega_solicitada)->format('d/m/Y') }}
+</p>
+<ul class="mt-1">
+                                @foreach($demanda->itens as $it)
+                                    <li class="text-xs font-black uppercase text-indigo-700">• {{ $it->produto->nome }} ({{ $it->quantidade }} un)</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @else
+
+
+                   {{-- Bloco de datas com letras maiores e data do simulador --}}
+<div class="mt-3 mb-4 p-2 border-2 border-dashed border-gray-300 bg-gray-50 rounded">
+    <div class="flex justify-between items-center mb-1">
+        <span class="text-[10px] font-black uppercase text-gray-500">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="2.5" style="filter: none !important; stroke: #ffff00 !important;">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+    @else
+        📅 
+    @endif
+    Recebido em:
+</span>
+        <span class="text-xs font-black text-black">
+            {{-- Aqui usamos a nova data do jogo --}}
+            {{ \Carbon\Carbon::parse($demanda->data_jogo_emissao)->format('d/m/Y') }}
+        </span>
+    </div>
+    <div class="flex justify-between items-center">
+        <span class="text-[10px] font-black uppercase text-gray-500">
+    @if(Auth::user()->acessibilidade_visual)
+        <svg class="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="#ffff00" stroke-width="3" style="filter: none !important; stroke: #ffff00 !important;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+    @else
+        🚨 
+    @endif
+    Entrega para:
+</span>
+        <span class="text-sm font-black text-red-600 underline">
+            {{ \Carbon\Carbon::parse($demanda->data_entrega_solicitada)->format('d/m/Y') }}
+        </span>
+    </div>
+</div>
+
+
+
+
+                        {{-- Se não for meu, eu preciso "Assumir" para ver os detalhes --}}
+                        <div class="mt-4">
+                            @if($cotaCheia)
+                                <div class="bg-gray-100 p-2 text-center border-2 border-gray-300 text-[9px] font-black text-gray-400 uppercase">
+                                    🔒 Pedido em Análise (Cota de Vendas Atingida)
+                                </div>
+                            @else
+
+                                <form action="{{ route('aluno.vendas.assumir', $demanda->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full bg-black text-white text-[10px] font-black py-2 uppercase hover:bg-indigo-600 transition">
+                                        Assumir este Pedido
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            @endif
+        @endforeach
+    </div>
+</div>
+
+            
                     <div class="bg-white border-4 border-black shadow-[8px_8px_0px_0px_black] rounded-xl overflow-hidden" 
      x-data="{ 
         showConfirm: false, 

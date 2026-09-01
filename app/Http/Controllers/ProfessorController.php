@@ -18,6 +18,9 @@ use App\Models\Fornecedor;
 use Carbon\Carbon;
 use App\Models\LocalEstoque;
 use Illuminate\Support\Facades\Schema;
+use App\Models\DemandaMercado;
+use App\Models\DemandaMercadoItem;
+use Illuminate\Support\Facades\Http;
 
 class ProfessorController extends Controller
 {
@@ -105,6 +108,124 @@ class ProfessorController extends Controller
         return redirect()->route('professor.global.alunos')->with('success', 'Aluno cadastrado! Senha inicial: Senai' . $request->rg_finais);
     }
 
+    /**
+     * Gera o modelo CSV para download pelo professor
+     */
+    public function downloadModeloAlunosCsv()
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="modelo_importacao_alunos.csv"',
+        ];
+
+        $content = "\xEF\xBB\xBF"; // UTF-8 BOM para abrir perfeitamente no Excel
+        $content .= "Nome;Email;Curso;Ano/Turma;Senha 3 Digitos\n";
+        $content .= "Arthur Lemes Alves;arthur@edu.senai.br;Almoxarife;2026 - Manhã;123\n";
+        $content .= "Maria Silva;maria@edu.senai.br;Logística;2026 - Tarde;456\n";
+
+        return response($content, 200, $headers);
+    }
+
+    /**
+     * Importação em massa de alunos via arquivo CSV / Excel
+     */
+    public function importarAlunosEmMassa(Request $request)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        $request->validate([
+            'arquivo' => 'required|file|max:10240',
+        ]);
+
+        $file = $request->file('arquivo');
+        $path = $file->getRealPath();
+
+        $handle = @fopen($path, 'r');
+        if (!$handle) {
+            return back()->with('error', 'Não foi possível abrir o arquivo enviado. Verifique a extensão e tente novamente.');
+        }
+
+        // Tenta identificar o delimitador
+        $primeiraLinha = fgets($handle);
+        rewind($handle);
+
+        $delimiter = ';';
+        if (substr_count($primeiraLinha, ',') > substr_count($primeiraLinha, ';')) {
+            $delimiter = ',';
+        } elseif (substr_count($primeiraLinha, "\t") > substr_count($primeiraLinha, ';')) {
+            $delimiter = "\t";
+        }
+
+        $importados = 0;
+        $ignorados = 0;
+        $linha = 0;
+
+        while (($data = fgetcsv($handle, 2000, $delimiter)) !== false) {
+            $linha++;
+
+            // Pula a primeira linha se for o cabeçalho
+            if ($linha === 1) {
+                $cabecalhoStr = strtolower(implode(' ', $data));
+                if (str_contains($cabecalhoStr, 'nome') || str_contains($cabecalhoStr, 'email') || str_contains($cabecalhoStr, 'curso')) {
+                    continue;
+                }
+            }
+
+            // Pula linhas vazias
+            if (empty(array_filter($data))) continue;
+
+            // Remove o BOM da primeira célula se existir
+            if (isset($data[0])) {
+                $data[0] = preg_replace('/^[\x{FEFF}\x{FFFE}]/u', '', $data[0]);
+            }
+
+            // Colunas: 0: Nome, 1: Email, 2: Curso, 3: Ano/Turma, 4: Senha (3 dígitos)
+            $nome = isset($data[0]) ? trim($data[0]) : '';
+            $email = isset($data[1]) ? trim(strtolower($data[1])) : '';
+            $curso = isset($data[2]) ? trim($data[2]) : 'Geral';
+            $anoTurma = isset($data[3]) ? trim($data[3]) : '2026';
+            $rgFinais = isset($data[4]) ? preg_replace('/[^0-9]/', '', trim($data[4])) : '';
+            if (strlen($rgFinais) !== 3) {
+                $rgFinais = '123';
+            }
+
+            if (empty($nome) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $ignorados++;
+                continue;
+            }
+
+            // Se o e-mail já existir no sistema, ignora
+            if (User::where('email', $email)->exists()) {
+                $ignorados++;
+                continue;
+            }
+
+            User::create([
+                'name' => $nome,
+                'email' => $email,
+                'tipo' => 'aluno',
+                'curso' => $curso,
+                'ano_letivo' => $anoTurma,
+                'rg_finais' => $rgFinais,
+                'password' => Hash::make('Senai' . $rgFinais),
+                'ativo' => true,
+            ]);
+
+            $importados++;
+        }
+
+        fclose($handle);
+
+        $mensagem = "📊 Importação em massa realizada! {$importados} aluno(s) matriculado(s) com sucesso.";
+        if ($ignorados > 0) {
+            $mensagem .= " ({$ignorados} linha(s) ignorada(s) por já existirem no sistema ou estarem incorretas).";
+        }
+
+        return redirect()->route('professor.global.alunos')->with('success', $mensagem);
+    }
+
     public function resetarSenhaAluno(User $user)
     {
         // NOVA REGRA: Resetar para a senha padrão fixa "Senaisp"
@@ -176,13 +297,23 @@ class ProfessorController extends Controller
 
     public function salvarRegras(Request $request)
     {
-        $regras = ['aluno_cadastra_cliente', 'aluno_cadastra_fornecedor', 'aluno_cadastra_materia_prima'];
-        foreach ($regras as $regra) {
-            ConfiguracaoSimulacao::where('chave', $regra)->update(['valor' => $request->has($regra)]);
-        }
-        return redirect()->route('professor.dashboard');
-    }
+        $regras = [
+            'aluno_cadastra_cliente', 
+            'aluno_cadastra_fornecedor', 
+            'aluno_cadastra_materia_prima',
+            'exigir_inspecao_qualidade' // <--- Inclusão da nova regra global
+        ];
 
+        foreach ($regras as $regra) {
+            // updateOrCreate garante a criação automática se a chave for nova
+            ConfiguracaoSimulacao::updateOrCreate(
+                ['chave' => $regra],
+                ['valor' => $request->has($regra) ? 1 : 0]
+            );
+        }
+
+        return redirect()->route('professor.dashboard')->with('success', 'Regras globais atualizadas com sucesso!');
+    }
     public function gerenciarTurmas()
     {
         if (Auth::user()->tipo == 'aluno') abort(403);
@@ -1158,20 +1289,612 @@ class ProfessorController extends Controller
     {
         if (Auth::user()->tipo == 'aluno') abort(403);
 
-        // Salvamos os campos usando o nome que está no seu HTML ('nome')
-        $user->update([
-    'name'                     => $request->nome, 
-    'acessibilidade_visual'    => $request->acessibilidade_visual,
-    'acessibilidade_motora'    => $request->acessibilidade_motora,
-    'acessibilidade_audio'       => $request->acessibilidade_audio,
-    'acessibilidade_pictogramas' => $request->acessibilidade_pictogramas,
-    'acessibilidade_libras'      => $request->acessibilidade_libras,
-    // Forçamos a cognitiva como 0 (desligada) pois ela saiu da tela
-    'acessibilidade_cognitiva'   => 0, 
-]);
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'curso' => 'required|string|max:255',
+            'ano_letivo' => 'required|string|max:255',
+        ]);
+
+        // ATRIBUIÇÃO DIRETA: Ignora a trava do $fillable e garante a gravação no banco
+        $user->name = $request->nome;
+        $user->curso = $request->curso;
+        $user->ano_letivo = $request->ano_letivo;
+        
+        $user->acessibilidade_visual = $request->acessibilidade_visual;
+        $user->acessibilidade_motora = $request->acessibilidade_motora;
+        $user->acessibilidade_audio = $request->acessibilidade_audio;
+        $user->acessibilidade_pictogramas = $request->acessibilidade_pictogramas;
+        $user->acessibilidade_libras = $request->acessibilidade_libras;
+        $user->acessibilidade_cognitiva = 0;
+
+        $user->save(); // <--- Força a gravação real no banco de dados
 
         return redirect()->route('professor.global.alunos')
-            ->with('success', 'Cadastro e acessibilidade atualizados!');
+            ->with('success', 'Cadastro, curso e turma atualizados com sucesso!');
     }
 
-} // <--- FIM DA CLASSE    
+public function gerarDemandaMercado(Request $request, $turmaId)
+{
+    set_time_limit(180);
+    $turma = Turma::findOrFail($turmaId);
+    $quantidadeSolicitada = $request->input('quantidade_pedidos', 5);
+    
+    $clientes = Cliente::where('turma_id', $turmaId)->get(['id', 'nome_razao_social'])->toArray();
+    $produtos = ProdutoAcabado::where('turma_id', $turmaId)->get(['id', 'nome'])->toArray();
+    $dataJogo = \Carbon\Carbon::parse($turma->data_jogo)->format('Y-m-d');
+
+    if (empty($clientes) || empty($produtos)) {
+        return back()->with('error', 'Cadastre pelo menos um Cliente e um Produto.');
+    }
+
+    $prompt = "Você é o Mercado Consumidor Brasileiro. Gere uma lista de INTENÇÕES DE COMPRA para a empresa '{$turma->nome_empresa}'.
+    CONTEXTO:
+    - Data Atual do Jogo: {$dataJogo}
+    - Clientes Disponíveis (IDs): " . json_encode($clientes) . "
+    - Produtos Disponíveis (IDs): " . json_encode($produtos) . "
+    - Quantidade de Pedidos a Gerar: {$quantidadeSolicitada}
+
+    REGRAS:
+    1. PRAZO: data_entrega entre 10 e 25 dias após {$dataJogo}.
+    2. ITENS: Cada pedido pode ter de 1 a 3 produtos diferentes da lista.
+    3. QUANTIDADE: Inteiros entre 5 e 100.
+    4. FORMATO: Responda APENAS com JSON puro.";
+
+    try {
+        $apiKey = env('GEMINI_API_KEY');
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" . $apiKey;
+
+        $response = Http::timeout(120)->retry(3, 2000)->post($url, [
+            'contents' => [['parts' => [['text' => $prompt]]]],
+            'generationConfig' => ['response_mime_type' => 'application/json']
+        ]);
+
+        $res = $response->json();
+        $textoJson = $res['candidates'][0]['content']['parts'][0]['text'] ?? '[]';
+        $demandas = json_decode($textoJson, true);
+
+        if (!is_array($demandas)) {
+            return back()->with('error', 'Erro ao processar dados do mercado.');
+        }
+
+        // SALVAMENTO NO BANCO
+        // SALVAMENTO NO BANCO
+        foreach ($demandas as $d) {
+            $novaDemanda = DemandaMercado::create([
+                'turma_id' => $turmaId,
+                'cliente_id' => $d['cliente_id'],
+                'data_entrega_solicitada' => $d['data_entrega'],
+                'data_jogo_emissao' => $turma->data_jogo, // <-- ADICIONE APENAS ESTA LINHA
+                'status' => 'Pendente'
+            ]);
+
+            foreach ($d['itens'] as $item) {
+                DemandaMercadoItem::create([
+                    'demanda_mercado_id' => $novaDemanda->id, // Nome exato da migration
+                    'produto_acabado_id' => $item['produto_id'],
+                    'quantidade' => $item['quantidade']
+                ]);
+            }
+        
+        }
+
+        return back()->with('success', "Mercado Aquecido! {$quantidadeSolicitada} novas solicitações foram enviadas para o setor de Vendas.");
+
+    } catch (\Throwable $e) {
+        // Se der erro no banco (coluna errada, etc), ele vai parar aqui e te dizer o nome da coluna.
+        dd("Erro ao salvar no banco: " . $e->getMessage(), "Linha: " . $e->getLine());
+    }
+}
+  public function verFinanceiro($id)
+{
+    $turma = Turma::findOrFail($id);
+    return view('professor.turmas_financeiro', compact('turma'));
+}
+
+public function injetarCapital(Request $request, $id)
+{
+    $turma = Turma::findOrFail($id);
+    $valor = (float) $request->valor_injeção;
+
+    // Forçamos a verificação do valor que vem do botão "acao"
+    if ($request->input('acao') == 'retirar') {
+        $turma->capital_atual = $turma->capital_atual - $valor;
+        $msg = "R$ " . number_format($valor, 2, ',', '.') . " retirados do caixa!";
+    } else {
+        $turma->capital_atual = $turma->capital_atual + $valor;
+        $msg = "R$ " . number_format($valor, 2, ',', '.') . " injetados com sucesso!";
+    }
+
+    $turma->save();
+    return back()->with('success', $msg);
+}
+public function configurarRelogio(Request $request, $id)
+{
+    $turma = Turma::findOrFail($id);
+    
+    // Convertemos os valores para números inteiros para evitar o erro de type
+    $status = (int) $request->status;
+    $intervalo = (int) $request->intervalo;
+
+    $turma->relogio_ativo = $status;
+    $turma->relogio_intervalo = $intervalo;
+    
+    // Se ligou o relógio, calcula a próxima virada
+    if($status === 1) {
+        // Agora usamos a variável já convertida para número
+        $turma->relogio_proximo_avanco = now()->addMinutes($intervalo);
+    } else {
+        // Se desligou, limpamos a próxima virada
+        $turma->relogio_proximo_avanco = null;
+    }
+    
+    $turma->save();
+    return back()->with('success', 'Configuração do relógio atualizada!');
+}
+
+    // =========================================================================
+    //  SISTEMA DE AVALIAÇÃO PEDAGÓGICA (GATILHO DE COMPETÊNCIAS)
+    // =========================================================================
+
+    /**
+     * Garante que as tabelas de competências existam no banco do servidor online
+     */
+    private function garantirTabelasCompetenciasExistentes()
+    {
+        if (!Schema::hasTable('competencias_cursos')) {
+            Schema::create('competencias_cursos', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->string('curso');
+                $table->string('unidade_curricular')->nullable();
+                $table->enum('categoria', ['tecnica', 'organizacional', 'socioemocional', 'conhecimento']);
+                $table->string('nome');
+                $table->text('descricao');
+                $table->enum('tipo_avaliacao', ['automatica', 'manual'])->default('manual');
+                $table->string('metrica_chave')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('aluno_avaliacoes')) {
+            Schema::create('aluno_avaliacoes', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->foreignId('competencia_id')->constrained('competencias_cursos')->onDelete('cascade');
+                $table->enum('status', ['pendente', 'conforme', 'nao_conforme'])->default('pendente');
+                $table->text('evidencia_automatica')->nullable();
+                $table->text('observacoes_professor')->nullable();
+                $table->timestamps();
+            });
+        }
+    }
+
+    /**
+     * 1. Exibe a tela de busca de alunos filtrada estritamente por Curso e Ano Letivo
+     */
+    public function indexAvaliacoes(Request $request)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        // Garante a existência das tabelas no banco de dados para prevenir Erro 500
+        $this->garantirTabelasCompetenciasExistentes();
+
+        // Busca opções únicas e reais para alimentar os dropdowns (evitando misturar turmas)
+        $cursosDisponiveis = User::where('tipo', 'aluno')->whereNotNull('curso')->distinct()->pluck('curso');
+        $anosDisponiveis = User::where('tipo', 'aluno')->whereNotNull('ano_letivo')->distinct()->pluck('ano_letivo');
+
+        $alunos = collect();
+
+        // Só executa a busca de alunos se ambos os filtros estiverem preenchidos na tela
+        if ($request->filled('curso') && $request->filled('ano_letivo')) {
+            $alunos = User::where('tipo', 'aluno')
+                ->where('curso', $request->curso)
+                ->where('ano_letivo', $request->ano_letivo)
+                ->orderBy('name')
+                ->get();
+
+            // CÁLCULO DINÂMICO DE RENDIMENTO DE CADA ALUNO DA LISTA
+            foreach ($alunos as $al) {
+                $cursoLimpo = trim($al->curso);
+
+                // 1. Conta o total de capacidades vinculadas ao plano de curso dele
+                $al->total_competencias = \Illuminate\Support\Facades\DB::table('competencias_cursos')
+                    ->whereRaw('LOWER(curso) = ?', [strtolower($cursoLimpo)])
+                    ->count();
+
+                // 2. Conta quantas capacidades o professor ou o sistema já avaliaram como Conforme (OK)
+                $al->competencias_atingidas = \Illuminate\Support\Facades\DB::table('aluno_avaliacoes')
+                    ->where('user_id', $al->id)
+                    ->where('status', 'conforme')
+                    ->count();
+            }
+        }
+
+        return view('professor.avaliacoes_index', compact('cursosDisponiveis', 'anosDisponiveis', 'alunos'));
+    }
+
+    /**
+     * 2. Carrega o Dashboard de Competências detalhado de um Aluno com KPIs Reais do BI (Corrigido)
+     */
+    public function avaliarAluno($id)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        $this->garantirTabelasCompetenciasExistentes();
+
+        $aluno = User::where('tipo', 'aluno')->findOrFail($id);
+        $cursoExato = trim($aluno->curso);
+
+        // Busca as competências específicas usando o termo case-insensitive
+        $competencias = \Illuminate\Support\Facades\DB::table('competencias_cursos')
+            ->whereRaw('LOWER(curso) = ?', [strtolower($cursoExato)])
+            ->get();
+
+        // Carrega o histórico de avaliações já salvas para este aluno
+        $avaliacoesSalvas = \Illuminate\Support\Facades\DB::table('aluno_avaliacoes')
+            ->where('user_id', $id)
+            ->get()
+            ->keyBy('competencia_id');
+
+        // --- INTEGRAÇÃO DOS DADOS DO BI (CORREÇÃO DE MULTI-VÍNCULOS) ---
+        // 1. Prioriza o vínculo da turma que está com o JOGO ATIVO (Rodando)
+        $vincAlun = \App\Models\Aluno::where('user_id', $id)
+            ->whereHas('turma', function($q) {
+                $q->where('jogo_ativo', true);
+            })
+            ->first();
+
+        // 2. Fallback: Se nenhuma estiver rodando, pega a última vinculada
+        if (!$vincAlun) {
+            $vincAlun = \App\Models\Aluno::where('user_id', $id)->latest('id')->first();
+        }
+
+        $turmaId = $vincAlun ? $vincAlun->turma_id : null;
+        $turma = $turmaId ? Turma::find($turmaId) : null;
+        $dataJogoStr = $turma ? $turma->data_jogo->toDateTimeString() : now()->toDateTimeString();
+        $alunoTableId = $vincAlun ? $vincAlun->id : null; 
+
+        $bi = [
+            'lead_time_vendas' => 0,
+            'lead_time_compras' => 0,
+            'lead_time_producao' => 0,
+            'dias_atraso_acumulado' => 0,
+            'gargalos' => ['Vendas' => 0, 'Compras' => 0, 'WMS' => 0, 'Produção' => 0, 'Expedição' => 0]
+        ];
+
+        if ($turmaId && $turma && $alunoTableId) {
+            // 1. Lead Times por Etapa
+            $bi['lead_time_vendas'] = \Illuminate\Support\Facades\DB::table('demandas_mercado')
+                ->join('pedidos_venda', 'demandas_mercado.cliente_id', '=', 'pedidos_venda.cliente_id')
+                ->where('demandas_mercado.turma_id', $turmaId)
+                ->where('demandas_mercado.status', 'Atendido')
+                ->where('pedidos_venda.aluno_id', $alunoTableId)
+                ->select(\Illuminate\Support\Facades\DB::raw('AVG(DATEDIFF(pedidos_venda.data_pedido, demandas_mercado.data_jogo_emissao)) as media'))
+                ->first()->media ?? 0;
+
+            $bi['lead_time_compras'] = \App\Models\OrdemCompra::whereHas('pedido', fn($q) => $q->where('turma_id', $turmaId)->where('aluno_id', $alunoTableId))
+                ->where('status', 'Concluído')
+                ->select(\Illuminate\Support\Facades\DB::raw('AVG(DATEDIFF(updated_at, created_at)) as media'))
+                ->first()->media ?? 0;
+
+            $bi['lead_time_producao'] = \App\Models\OrdemProducao::whereHas('pedido', fn($q) => $q->where('turma_id', $turmaId)->where('aluno_id', $alunoTableId))
+                ->where('status', 'Concluída')
+                ->select(\Illuminate\Support\Facades\DB::raw('AVG(DATEDIFF(data_fim, data_inicio_real)) as media'))
+                ->first()->media ?? 0;
+
+            // 2. Dias de Atraso Acumulados
+            $bi['dias_atraso_acumulado'] = \Illuminate\Support\Facades\DB::table('pedidos_venda')
+                ->join('pedido_venda_itens', 'pedidos_venda.id', '=', 'pedido_venda_itens.pedido_venda_id')
+                ->where('pedidos_venda.turma_id', $turmaId)
+                ->where('pedidos_venda.status', '!=', 'Faturado')
+                ->where('pedidos_venda.aluno_id', $alunoTableId)
+                ->whereDate('pedidos_venda.data_entrega_solicitada', '<', $dataJogoStr)
+                ->select(\Illuminate\Support\Facades\DB::raw("SUM(DATEDIFF('{$dataJogoStr}', pedidos_venda.data_entrega_solicitada)) as total_dias"))
+                ->first()->total_dias ?? 0;
+
+            // 3. Gargalos Ativos
+            $bi['gargalos'] = [
+                'Vendas' => \App\Models\DemandaMercado::where('turma_id', $turmaId)->where('status', 'Pendente')->where('aluno_id', $alunoTableId)->count(),
+                'Compras' => \App\Models\OrdemCompra::whereHas('pedido', fn($q) => $q->where('turma_id', $turmaId)->where('aluno_id', $alunoTableId))->where('status', 'Pendente')->count(),
+                'WMS' => \App\Models\MateriaPrima::where('turma_id', $turmaId)->where('quantidade_estoque', '>', 0)->whereNull('local_estoque_id')->count(), 
+                'Produção' => \App\Models\OrdemProducao::whereHas('pedido', fn($q) => $q->where('turma_id', $turmaId)->where('aluno_id', $alunoTableId))->where('status', 'Aberta')->count(),
+                'Expedição' => \App\Models\PedidoVenda::where('turma_id', $turmaId)->where('status', 'Em Produção')->where('aluno_id', $alunoTableId)->whereDoesntHave('ordensProducao', fn($q)=>$q->where('embalado', false))->count(),
+            ];
+        }
+
+        // CALCULO DE MÉTRICAS PEDAGÓGICAS REAIS (Baseadas nas turmas ativas do aluno)
+        $minhasTurmasIds = \App\Models\Aluno::where('user_id', $id)->pluck('turma_id');
+        $metricas = [
+            'wms_picking_concluido' => \App\Models\SolicitacaoSeparacao::where('status', 'Entregue')->whereHas('ordemProducao.pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(),
+            'producao_material_solicitado' => \App\Models\SolicitacaoSeparacao::whereHas('ordemProducao.pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(),
+            'compras_conferencia_concluida' => \App\Models\OrdemCompra::where('status', 'Concluído')->whereHas('pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(),
+            'compras_recusa_justificada' => \App\Models\OrdemCompra::where('status', 'Recusado')->whereNotNull('motivo_recusa')->whereHas('pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(),
+            'producao_refugo_apontado' => \App\Models\ApontamentoProducao::where('aluno_id', $id)->sum('quantidade_refugo') ?? 0,
+            'producao_lote_concluido' => \App\Models\ApontamentoProducao::where('aluno_id', $id)->count(),
+            'expedicao_faturamento_concluido' => \App\Models\NotaFiscal::whereHas('pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(),
+            'wms_enderecamento_concluido' => \App\Models\MateriaPrima::whereNotNull('local_estoque_id')->where(fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(), 
+            'wms_movimentacao_total' => \App\Models\SolicitacaoSeparacao::where('status', 'Entregue')->whereHas('ordemProducao.pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count() + \App\Models\MateriaPrima::whereNotNull('local_estoque_id')->where(fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(),
+            'pcp_prioridade_mde' => \App\Models\OrdemProducao::whereHas('pedido', fn($q) => $q->whereIn('turma_id', $minhasTurmasIds))->count(), 
+            'financeiro_caixa_positivo' => 1, 
+            'bi_acesso_indicadores' => 1, 
+        ];
+
+        // --- MOTOR DE SUGESTÕES PEDAGÓGICAS ---
+        foreach ($competencias as $comp) {
+            if (isset($avaliacoesSalvas[$comp->id])) {
+                $comp->status_atual = $avaliacoesSalvas[$comp->id]->status;
+                $comp->observacao_atual = $avaliacoesSalvas[$comp->id]->observacoes_professor;
+                $comp->sugerido = false;
+            } else {
+                $comp->observacao_atual = '';
+                $comp->sugerido = true;
+                $statusSugerido = 'pendente';
+
+                if ($comp->tipo_avaliacao == 'automatica' && isset($comp->metrica_chave)) {
+                    $valor = $metricas[$comp->metrica_chave] ?? 0;
+                    $statusSugerido = ($valor > 0) ? 'conforme' : 'nao_conforme';
+                } 
+                else {
+                    if ($comp->nome == 'Demonstrar Visão Sistêmica') {
+                        $statusSugerido = ($metricas['bi_acesso_indicadores'] > 0) ? 'conforme' : 'nao_conforme';
+                    }
+                    elseif ($comp->nome == 'Trabalhar em Equipe') {
+                        $statusSugerido = ($metricas['expedicao_faturamento_concluido'] > 0) ? 'conforme' : 'nao_conforme';
+                    }
+                    elseif ($comp->nome == 'Demonstrar Resiliência Emocional e Autogestão') {
+                        $statusSugerido = ($metricas['wms_movimentacao_total'] > 0) ? 'conforme' : 'nao_conforme';
+                    }
+                    elseif ($comp->nome == 'Demonstrar Pensamento Analítico e Tomada de Decisão') {
+                        $statusSugerido = ($metricas['financeiro_caixa_positivo'] == 1) ? 'conforme' : 'nao_conforme';
+                    }
+                    elseif ($comp->nome == 'Demonstrar Atenção a Detalhes') {
+                        $statusSugerido = ($metricas['producao_refugo_apontado'] < 50) ? 'conforme' : 'nao_conforme';
+                    }
+                    elseif ($comp->nome == 'Demonstrar Capacidade de Planejamento e Organização') {
+                        $statusSugerido = ($metricas['wms_enderecamento_concluido'] > 0) ? 'conforme' : 'nao_conforme';
+                    }
+                }
+
+                $comp->status_atual = $statusSugerido;
+            }
+        }
+
+        return view('professor.avaliar_aluno', compact('aluno', 'competencias', 'avaliacoesSalvas', 'metricas', 'bi'));
+    }
+
+    /**
+     * 3. Processa e salva as avaliações e comentários atribuídos pelo professor
+     */
+    public function salvarAvaliacaoAluno(Request $request, $id)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        $request->validate([
+            'avaliacoes' => 'required|array',
+            'avaliacoes.*.status' => 'required|in:conforme,nao_conforme,pendente',
+            'avaliacoes.*.observacoes' => 'nullable|string'
+        ]);
+
+        foreach ($request->avaliacoes as $competenciaId => $dados) {
+            \Illuminate\Support\Facades\DB::table('aluno_avaliacoes')->updateOrInsert(
+                [
+                    'user_id' => $id,
+                    'competencia_id' => $competenciaId
+                ],
+                [
+                    'status' => $dados['status'],
+                    'observacoes_professor' => $dados['observacoes'] ?? null,
+                    'updated_at' => now(),
+                    'created_at' => now()
+                ]
+            );
+        }
+
+        return redirect()->route('professor.avaliacoes.index', [
+            'curso' => $request->input('curso'),
+            'ano_letivo' => $request->input('ano_letivo')
+        ])->with('success', 'Avaliação pedagógica salva com sucesso!');
+    }
+    // =========================================================================
+    //  IMPORTADOR DE PLANOS DE CURSO (IA GEMINI MULTIMODAL)
+    // =========================================================================
+
+    /**
+     * Exibe a tela de upload e digitação de ementa
+     */
+    public function formImportarCurso()
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+        return view('professor.importar_curso');
+    }
+
+    /**
+     * Processa a importação do PDF ou texto, envia ao Gemini e grava as competências
+     */
+    public function processarImportarCurso(Request $request)
+    {
+        // Define o limite de execução do PHP para 5 minutos para processar o PDF grande por IA
+        set_time_limit(300); 
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        $request->validate([
+            'curso' => 'required|string|max:255',
+            'texto_plano' => 'nullable|string',
+            'arquivo_pdf' => 'nullable|file|mimes:pdf|max:30000',
+        ]);
+
+        $curso = trim($request->curso);
+        $parts = [];
+
+        if ($request->hasFile('arquivo_pdf')) {
+            // Se for PDF: Converte em Base64 e envia inline na requisição
+            $file = $request->file('arquivo_pdf');
+            $pdfBase64 = base64_encode(file_get_contents($file->path()));
+            
+            $parts[] = [
+                'inlineData' => [
+                    'mimeType' => 'application/pdf',
+                    'data' => $pdfBase64
+                ]
+            ];
+        } elseif ($request->filled('texto_plano')) {
+            // Se for texto digitado/colado
+            $parts[] = [
+                'text' => "Texto do plano de curso fornecido:\n" . $request->texto_plano
+            ];
+        } else {
+            return back()->with('error', 'Por favor, insira o texto do plano de curso ou selecione um arquivo PDF.');
+        }
+
+        // PROMPT SISTÊMICO DE EXTRAÇÃO PEDAGÓGICA E CONFORMIDADE DE BANCO
+        $prompt = "Você é um analista pedagógico especialista em educação profissional do SENAI-SP. 
+Sua tarefa é analisar o plano de curso fornecido e extrair TODAS as unidades curriculares, capacidades técnicas, organizacionais e socioemocionais (extraia a matriz completa sem omitir nenhuma competência do plano).
+Você deve alinhar cada capacidade extraída diretamente com as métricas internas de banco de dados do simulador de ERP Fábrica Digital v1.6.
+
+REGRAS OBRIGATÓRIAS DE EXTRAÇÃO:
+1. CURSO: Use exatamente o nome '{$curso}'.
+2. CATEGORIA: Classifique cada registro estritamente em uma destas quatro opções: 'tecnica', 'organizacional', 'socioemocional' ou 'conhecimento'.
+3. MÉTODOS DE AVALIAÇÃO E MÉTRIAS:
+   - Se for uma capacidade que o software consegue medir de forma automatizada no ERP, defina 'tipo_avaliacao' como 'automatica' e associe a uma das seguintes chaves exatas no campo 'metrica_chave':
+     * 'wms_picking_concluido' (separação e picking de materiais concluídos)
+     * 'producao_material_solicitado' (abastecimento solicitado pelo operador de máquinas)
+     * 'compras_conferencia_concluida' (checklist e conferência quantitativa de compras na doca)
+     * 'compras_recusa_justificada' (devolução e recusa de cargas avariadas pelo Caos)
+     * 'producao_refugo_apontado' (apontamento de perdas e refugos em máquina)
+     * 'producao_lote_concluido' (conclusão física e embalagem de lotes fabricados)
+     * 'expedicao_faturamento_concluido' (faturamento de ordens e emissão de notas fiscais)
+     * 'wms_enderecamento_concluido' (endereçamento de matérias-primas no mapa de estoque)
+     * 'wms_movimentacao_total' (movimentações gerais de armazém)
+     * 'pcp_prioridade_mde' (aluno do PCP priorizando ordens e analisando MRP/BOM)
+     * 'financeiro_caixa_positivo' (aluno gerenciando e mantendo caixa positivo)
+     * 'bi_acesso_indicadores' (aluno acessando e analisando dados de BI)
+   - Se for uma capacidade socioemocional ou organizativa que exige avaliação observacional do professor (ex: trabalho em equipe, autogestão, resiliência), defina 'tipo_avaliacao' as 'manual' e defina 'metrica_chave' como null.
+4. DESCRICAO: Escreva uma descrição curta e objetiva de como essa capacidade se aplica faticamente nas telas do simulador.
+
+RETORNE APENAS UM ARRAY JSON PURO contendo objetos com esta estrutura de colunas:
+[
+  {
+    \"curso\": \"{$curso}\",
+    \"unidade_curricular\": \"Nome da Unidade Curricular ou elemento\",
+    \"categoria\": \"tecnica/socioemocional/organizacional/conhecimento\",
+    \"nome\": \"Nome resumido do padrão de desempenho\",
+    \"descricao\": \"Descrição detalhada de como o aluno executa no software\",
+    \"tipo_avaliacao\": \"automatica/manual\",
+    \"metrica_chave\": \"chave_da_metrica_ou_null\"
+  }
+]";
+
+        // Adiciona o prompt textual ao array de partes
+        $parts[] = ['text' => $prompt];
+
+        try {
+            $apiKey = env('GEMINI_API_KEY');
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" . $apiKey;
+
+            // Ajuste do timeout para 45s (abaixo dos 60s do Nginx) sem retentativas longas para evitar 504
+            $response = Http::timeout(45)->post($url, [
+                'contents' => [
+                    [
+                        'parts' => $parts
+                    ]
+                ],
+                'generationConfig' => [
+                    'response_mime_type' => 'application/json',
+                    'temperature' => 0.2
+                ]
+            ]);
+
+            $res = $response->json();
+            $textoJson = $res['candidates'][0]['content']['parts'][0]['text'] ?? '[]';
+            $competenciasExtraidas = json_decode($textoJson, true);
+
+            if (!is_array($competenciasExtraidas) || empty($competenciasExtraidas)) {
+                return back()->withInput()->with('error', 'A IA não conseguiu estruturar as competências deste arquivo. Dica: Tente utilizar a Opção A (Copiar e Colar o texto do plano de curso) para um resultado mais rápido.');
+            }
+
+            return view('professor.importar_curso_preview', compact('curso', 'competenciasExtraidas'));
+
+        } catch (\Exception $e) {
+            logger()->error('Erro na importação IA do curso: ' . $e->getMessage());
+            return back()->withInput()->with('error', '⏱️ TEMPO LIMITE EXCEDIDO: O arquivo PDF enviado é muito extenso e a análise da IA ultrapassou o tempo do servidor (504 Timeout). DICA DE OURO: Utilize a Opção A (Copiar e Colar o texto das UCs/Capacidades) para a IA processar em poucos segundos!');
+        }
+    }
+
+    /**
+     * C. Grava definitivamente as competências revisadas e editadas pelo professor no banco
+     */
+    public function confirmarImportarCurso(Request $request)
+    {
+        if (Auth::user()->tipo == 'aluno') abort(403);
+
+        $request->validate([
+            'curso' => 'required|string|max:255',
+            'competencias' => 'required|array|min:1',
+            'competencias.*.unidade_curricular' => 'nullable|string|max:255',
+            'competencias.*.categoria' => 'required|in:tecnica,organizacional,socioemocional,conhecimento',
+            'competencias.*.nome' => 'required|string|max:255',
+            'competencias.*.descricao' => 'required|string',
+            'competencias.*.tipo_avaliacao' => 'required|in:automatica,manual',
+            'competencias.*.metrica_chave' => 'nullable|string|max:255',
+        ]);
+
+        $curso = trim($request->curso);
+
+        // 1. LIMPEZA SEGURA CONTRA DUPLICAÇÕES
+        \Illuminate\Support\Facades\DB::table('competencias_cursos')
+            ->whereRaw('LOWER(curso) = ?', [strtolower($curso)])
+            ->delete();
+
+        // 2. FILTRA E SALVA APENAS AS CAPACIDADES QUE O PROFESSOR AUTORIZOU (CHECKBOX 'importar')
+        $itensParaSalvar = [];
+        foreach ($request->competencias as $comp) {
+            // Se o professor desmarcou o checkbox desta linha, ela é descartada e não entra no banco
+            if (!isset($comp['importar']) || $comp['importar'] != '1') {
+                continue;
+            }
+
+            $itensParaSalvar[] = [
+                'curso' => $curso,
+                'unidade_curricular' => $comp['unidade_curricular'] ?? null,
+                'categoria' => $comp['categoria'],
+                'nome' => $comp['nome'],
+                'descricao' => $comp['descricao'],
+                'tipo_avaliacao' => $comp['tipo_avaliacao'],
+                'metrica_chave' => !empty($comp['metrica_chave']) && $comp['metrica_chave'] !== 'null' ? $comp['metrica_chave'] : null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (empty($itensParaSalvar)) {
+            return redirect()->route('professor.avaliacoes.index')->with('error', 'Importação cancelada: Nenhuma capacidade foi selecionada para gravação.');
+        }
+
+        // Grava as capacidades autorizadas no banco de dados em lote
+        \Illuminate\Support\Facades\DB::table('competencias_cursos')->insert($itensParaSalvar);
+
+        $qty = count($itensParaSalvar);
+        return redirect()->route('professor.avaliacoes.index')->with('success', "Plano de Curso '{$curso}' revisado e importado com sucesso! {$qty} capacidades pedagógicas foram gravadas.");
+    }
+
+    /**
+     * D. Exclui a matriz de competências de um curso (Protegido por Senha Mestra)
+     */
+    public function excluirMatrizCurso(Request $request)
+    {
+        // Esta parte do middleware aqui dentro garante que o request venha com a senha
+        // E o middleware da rota (web.php) faz a validação da senha_mestra antes de chegar aqui.
+        
+        $curso = trim($request->curso);
+
+        $deletado = \Illuminate\Support\Facades\DB::table('competencias_cursos')
+            ->where('curso', '=', $curso)
+            ->delete();
+
+        if ($deletado > 0) {
+            return redirect()->route('professor.avaliacoes.index')->with('success', "Matriz do curso '{$curso}' excluída!");
+        }
+
+        return redirect()->route('professor.avaliacoes.index')->with('error', "Erro ao excluir curso.");
+    }
+
+} // <--- FIM DA CLASSE

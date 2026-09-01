@@ -66,8 +66,34 @@ select option:checked {
         </div>
     </x-slot>
 
-    <div class="py-12 bg-yellow-50 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+    {{-- BLOCO DE ALERTAS NEO-BRUTALISTA --}}
+            @if(session('error'))
+                <div class="bg-red-200 border-4 border-black p-4 rounded-xl shadow-[4px_4px_0px_0px_black] flex items-center gap-3 font-black text-red-900 text-sm">
+                    <span class="text-2xl">⚠️</span>
+                    <div>{{ session('error') }}</div>
+                </div>
+            @endif
+
+            @if(session('success'))
+                <div class="bg-green-200 border-4 border-black p-4 rounded-xl shadow-[4px_4px_0px_0px_black] flex items-center gap-3 font-black text-green-900 text-sm">
+                    <span class="text-2xl">✅</span>
+                    <div>{{ session('success') }}</div>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="bg-red-200 border-4 border-black p-4 rounded-xl shadow-[4px_4px_0px_0px_black] font-black text-red-900 text-sm space-y-1">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">❌</span>
+                        <div>Por favor, selecione um fornecedor:</div>
+                    </div>
+                    <ul class="list-disc pl-10 mt-2">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             
             <!-- 1. RESUMO DA REQUISIÇÃO (FICHA TÉCNICA) -->
             <div class="bg-white border-4 border-black rounded-xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">

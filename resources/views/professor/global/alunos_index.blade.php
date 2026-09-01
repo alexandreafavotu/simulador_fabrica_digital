@@ -60,6 +60,39 @@
                             </div>
                         </div>
                     </form>
+            </div>
+
+            <!-- 1.5 IMPORTAÇÃO EM MASSA DE ALUNOS (EXCEL / CSV) -->
+            <div class="bg-white border-4 border-black rounded-xl shadow- overflow-hidden">
+                <div class="bg-green-700 text-white p-4 border-b-4 border-black flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">📊</span>
+                        <div>
+                            <h3 class="font-black text-lg uppercase tracking-wide">Importar Alunos em Massa (Excel / CSV)</h3>
+                            <p class="text-xs text-green-200 font-bold">Envie uma planilha com Nome, E-mail, Curso e Ano/Turma para matricular a turma inteira de uma só vez.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- BOTÃO DOWNLOAD MODELO -->
+                    <a href="{{ route('professor.global.modelo_csv') }}" class="bg-yellow-400 hover:bg-yellow-500 text-black border-2 border-black font-black text-xs px-4 py-2.5 rounded shadow- active:shadow-none active:translate-y- transition flex items-center justify-center gap-2 shrink-0">
+                        <span>📥</span> BAIXAR PLANILHA MODELO (.CSV)
+                    </a>
+                </div>
+
+                <div class="p-6 bg-green-50">
+                    <form method="POST" action="{{ route('professor.global.importar') }}" enctype="multipart/form-data" class="flex flex-col md:flex-row items-center gap-4">
+                        @csrf
+                        <div class="flex-1 w-full">
+                            <label class="block text-xs font-black text-gray-800 uppercase mb-1">Selecione o Arquivo de Alunos (.csv, .txt ou .xlsx)</label>
+                            <input type="file" name="arquivo" required accept=".csv,.txt,.xlsx,.xls" class="w-full bg-white border-2 border-black rounded p-2 text-xs font-mono file:mr-4 file:py-1 file:px-3 file:rounded file:border-2 file:border-black file:text-xs file:font-black file:bg-green-600 file:text-white hover:file:bg-green-700">
+                        </div>
+
+                        <div class="w-full md:w-auto flex items-end">
+                            <button type="submit" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-black py-3 px-8 rounded border-2 border-black shadow- hover:translate-x- hover:translate-y- transition flex items-center justify-center gap-2">
+                                <span>🚀</span> IMPORTAR TURMA EM MASSA
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

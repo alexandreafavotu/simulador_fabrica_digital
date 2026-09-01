@@ -47,6 +47,9 @@
     // O que sobra para o aluno aprovar é o saldo menos o que você sabotou
     $valBoas = $isForcado ? ($saldoRestante - $valRefugo) : $saldoRestante;
     if($valBoas < 0) $valBoas = 0;
+
+    // NOVO: Regra global de controle de qualidade
+    $inspecaoManual = \App\Models\ConfiguracaoSimulacao::where('chave', 'exigir_inspecao_qualidade')->first()?->valor ?? 0;
 @endphp
 
             {{-- CARD INDUSTRIAL --}}
@@ -127,11 +130,11 @@
                             <div class="bg-green-50 p-4 rounded-xl border-2 border-green-200">
                                 <label class="block text-xs font-black text-green-800 uppercase mb-2">✅ Quantidade Aprovada</label>
                                 
-                                {{-- INPUT TRAVADO (READONLY SEMPRE) --}}
+                                {{-- INPUT TRAVADO APENAS SE A REGRA DE QUALIDADE ESTIVER DESLIGADA --}}
                                 <input type="number" name="quantidade_produzida" 
                                        value="{{ $finalBoas }}" 
-                                       readonly
-                                       class="block w-full border-4 {{ $isForcado ? 'border-gray-400 bg-gray-100' : 'border-green-600 bg-white' }} rounded-lg shadow-sm focus:ring-0 text-3xl font-black text-green-700 text-center p-2 cursor-not-allowed">
+                                       @if(!$inspecaoManual) readonly @endif
+                                       class="block w-full border-4 {{ !$inspecaoManual && $isForcado ? 'border-gray-400 bg-gray-100' : 'border-green-600 bg-white' }} rounded-lg shadow-sm focus:ring-0 text-3xl font-black text-green-700 text-center p-2 {{ !$inspecaoManual ? 'cursor-not-allowed' : '' }}">
                                 
                                 <p class="text-[10px] font-bold text-green-600 mt-2 uppercase">
                                     {{ $isForcado ? 'Ajuste automático por falha' : 'Produção 100% Eficiente' }}
@@ -142,11 +145,11 @@
                             <div class="bg-red-50 p-4 rounded-xl border-2 border-red-200">
                                 <label class="block text-xs font-black text-red-800 uppercase mb-2">🗑️ Refugo (Perda)</label>
                                 
-                                {{-- INPUT TRAVADO (READONLY SEMPRE) --}}
+                                {{-- INPUT TRAVADO APENAS SE A REGRA DE QUALIDADE ESTIVER DESLIGADA --}}
                                 <input type="number" name="quantidade_refugo" 
                                        value="{{ $finalRefugo }}" 
-                                       readonly
-                                       class="block w-full border-4 {{ $isForcado ? 'border-gray-400 bg-gray-100' : 'border-red-500 bg-white' }} rounded-lg shadow-sm focus:ring-0 text-3xl font-black text-red-600 text-center p-2 cursor-not-allowed">
+                                       @if(!$inspecaoManual) readonly @endif
+                                       class="block w-full border-4 {{ !$inspecaoManual && $isForcado ? 'border-gray-400 bg-gray-100' : 'border-red-500 bg-white' }} rounded-lg shadow-sm focus:ring-0 text-3xl font-black text-red-600 text-center p-2 {{ !$inspecaoManual ? 'cursor-not-allowed' : '' }}">
                                 
                                 <p class="text-[10px] font-bold text-red-500 mt-2 uppercase">
                                     {{ $isForcado ? 'Perda detectada pela máquina' : 'Nenhuma anomalia registrada' }}
@@ -189,9 +192,10 @@
         const limiteMaximo = {{ $saldoRestante }};
         // Aqui pegamos se está sabotado ou não (true/false)
         const isForcado = {{ $isForcado ? 'true' : 'false' }};
+        const inspecaoManual = {{ $inspecaoManual ? 'true' : 'false' }};
 
-        // --- 2. SÓ ATIVA A LÓGICA SE NÃO ESTIVER SABOTADO ---
-        if (!isForcado) {
+        // --- 2. ATIVA A LÓGICA SE NÃO ESTIVER SABOTADO OU SE A INSPEÇÃO MANUAL ESTIVER ATIVA ---
+        if (!isForcado || inspecaoManual) {
             
             function validarTotais() {
                 let boas = parseInt(inputBoas.value) || 0;

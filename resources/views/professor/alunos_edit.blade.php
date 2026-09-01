@@ -40,6 +40,20 @@
                                        class="w-full border-4 border-black rounded p-3 font-bold text-lg focus:ring-0 focus:border-indigo-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
                             </div>
 
+                            <!-- CURSO -->
+                            <div>
+                                <label class="block text-xs font-black text-gray-700 uppercase mb-1">Curso</label>
+                                <input type="text" name="curso" value="{{ $aluno->curso }}" required placeholder="Ex: Almoxarife"
+                                       class="w-full border-4 border-black rounded p-3 font-bold text-lg focus:ring-0 focus:border-indigo-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                            </div>
+
+                            <!-- ANO / TURMA (SALVA JUNTO NA COLUNA 'ano_letivo' DO BANCO DE DADOS) -->
+                            <div>
+                                <label class="block text-xs font-black text-gray-700 uppercase mb-1">Ano / Turma</label>
+                                <input type="text" name="ano_letivo" value="{{ $aluno->ano_letivo }}" required placeholder="Ex: 2026 - Manhã"
+                                       class="w-full border-4 border-black rounded p-3 font-bold text-lg focus:ring-0 focus:border-indigo-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                            </div>
+
                             <!-- SEÇÃO DE ACESSIBILIDADE -->
                             <div class="mt-10 p-6 bg-yellow-200 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
                                 <h3 class="text-lg font-black uppercase mb-4 flex items-center gap-2">
@@ -53,7 +67,7 @@
                                         <input type="checkbox" name="acessibilidade_visual" value="1" {{ $aluno->acessibilidade_visual ? 'checked' : '' }} 
                                                class="w-8 h-8 border-4 border-black text-indigo-600 focus:ring-0">
                                         <div class="ml-4">
-                                            <span class="block font-black uppercase text-sm">Modo Alto Contraste</span>
+                                            <span class="block font-black uppercase text-sm">🌗 Modo Alto Contraste</span>
                                             <span class="text-[10px] font-bold text-gray-500 uppercase">Fundo preto e texto amarelo para baixa visão.</span>
                                         </div>
                                     </label>
@@ -64,7 +78,7 @@
                                         <input type="checkbox" name="acessibilidade_motora" value="1" {{ $aluno->acessibilidade_motora ? 'checked' : '' }} 
                                                class="w-8 h-8 border-4 border-black text-indigo-600 focus:ring-0">
                                         <div class="ml-4">
-                                            <span class="block font-black uppercase text-sm">Auxílio de Navegação</span>
+                                            <span class="block font-black uppercase text-sm">⌨️ Auxílio de Navegação</span>
                                             <span class="text-[10px] font-bold text-gray-500 uppercase">Destaque visual em campos e navegação por teclado.</span>
                                         </div>
                                     </label>
@@ -98,7 +112,7 @@
            class="w-8 h-8 border-4 border-black text-indigo-600 focus:ring-0">
     <div class="ml-4">
         <span class="block font-black uppercase text-sm">🖼️ Pictogramas de Apoio</span>
-        <span class="text-[10px] font-bold text-gray-500 uppercase">Exibe ícones simplificados junto aos textos técnicos.</span>
+        <span class="text-[10px] font-bold text-gray-500 uppercase">Exibe ícones simplificados junto aos textos técnicos do MENU.<br>(OBS.: Não deve ser utilizado junto ao modo Alto Contraste).</span>
     </div>
 </label>
 
@@ -108,7 +122,7 @@
     <input type="checkbox" name="acessibilidade_libras" value="1" {{ $aluno->acessibilidade_libras ? 'checked' : '' }} 
            class="w-8 h-8 border-4 border-black text-indigo-600 focus:ring-0">
     <div class="ml-4">
-        <span class="block font-black uppercase text-sm">🤟 Tradutor de Libras (VLibras)</span>
+        <span class="block font-black uppercase text-sm">🧏 Tradutor de Libras (VLibras)</span>
         <span class="text-[10px] font-bold text-gray-500 uppercase">Ativa o assistente virtual de língua de sinais brasileira.</span>
     </div>
 </label>

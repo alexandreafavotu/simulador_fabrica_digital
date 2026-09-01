@@ -159,6 +159,8 @@ body.high-contrast .fixed.bottom-6.right-6 button { background-color: #ffff00 !i
 body.high-contrast .img-pcd-yellow {
     filter: invert(100%) sepia(100%) saturate(5000%) hue-rotate(5deg) brightness(100%) contrast(100%) !important;
 }
+
+
             
         </style>
     </head>
@@ -198,7 +200,7 @@ body.high-contrast .img-pcd-yellow {
             <!-- Rodapé -->
             <footer class="bg-black text-white py-4 mt-auto border-t-4 border-senai-red no-print">
                 <div class="max-w-7xl mx-auto px-4 text-center text-sm">
-                    <p>Fábrica Digital 1.5</p>
+                    <p>Fábrica Digital 1.6</p>
                      <!-- A FAIXINHA (SEPARADOR INDUSTRIAL) -->
         <div class="h-[3px] w-20 bg-indigo-600 mx-auto my-3 shadow-[0_0_10px_rgba(79,70,229,0.6)]"></div>
                     <p class="text-gray-200 text-xs mt-1">Desenvolvido por: Professor Alexandre Felix de Araujo</p>
@@ -382,7 +384,7 @@ body.high-contrast .img-pcd-yellow {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
 
-            <span class="text-[10px] font-bold uppercase tracking-widest {{ $isPcdGlobal ? 'text-yellow-400' : '' }}">v1.5</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest {{ $isPcdGlobal ? 'text-yellow-400' : '' }}">v1.7</span>
         </button>
     </div>
 
@@ -425,7 +427,7 @@ body.high-contrast .img-pcd-yellow {
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-3 rounded-xl {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-gray-50 border border-gray-100' }}">
                             <p class="text-[10px] font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Versão Atual</p>
-                            <p class="text-lg font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-700' }}">v1.5</p>
+                            <p class="text-lg font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-700' }}">v1.7</p>
                         </div>
                         <div class="p-3 rounded-xl {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-gray-50 border border-gray-100' }}">
                             <p class="text-[10px] font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Última Versão</p>
@@ -434,41 +436,92 @@ body.high-contrast .img-pcd-yellow {
                     </div>
 
                     {{-- Notas de Lançamento (Timeline) --}}
-                    <div class="mt-6 space-y-4">
+                    <div class="space-y-3 max-h-[35vh] overflow-y-auto pr-2">
                         <h4 class="font-black text-xs uppercase tracking-widest pb-1 border-b-2 {{ $isPcdGlobal ? 'text-yellow-400 border-yellow-400' : 'text-indigo-600 border-indigo-100' }}">
                             Linha do Tempo de Desenvolvimento
                         </h4>
 
-                        <!-- VERSÃO 1.5 (ATUAL) -->
-                        <div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-4 border-yellow-400' : 'bg-indigo-50 border-2 border-indigo-500 hover:shadow-[5px_5px_0px_0px_rgba(79,70,229,1)]' }}">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="px-2 py-0.5 rounded font-black text-[10px] {{ $isPcdGlobal ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white' }}">v1.5 (Stable)</span>
-                                <span class="text-[10px] font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-400' }}">05/01/2026</span>
-                            </div>
-                            <p class="text-xs font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-900' }}">Reforma Industrial e de Segurança</p>
-                            
-                            {{-- LISTA V1.5 COMPLETA --}}
-                            <ul class="mt-2 space-y-1 text-[10px] font-medium hidden group-hover:block {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-700' }}">
-                            <li>{!! $iconCheck !!} **Visual:** Modo Alto Contraste (Preto e Amarelo Neon).</li>
-                            <li>{!! $iconCheck !!} **Inclusão 4.0:** Motor de Voz e Tradutor de Libras.</li>
-                            <li>{!! $iconCheck !!} **Acessibilidade:** Pictogramas e Navegação Assistida.</li>
+                        <!-- VERSÃO 1.7 (AI & Competências) -->
+<div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-4 border-yellow-400' : 'bg-indigo-50 border-2 border-indigo-500 hover:shadow-[5px_5px_0px_0px_rgba(79,70,229,1)]' }} mb-4">
+    <div class="flex justify-between items-center mb-2">
+        <span class="px-2 py-0.5 rounded font-black text-[10px] {{ $isPcdGlobal ? 'bg-yellow-400 text-black' : 'bg-indigo-600 text-white' }}">v1.7 (AI & Competências)</span>
+        <span class="text-[10px] font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-400' }}">20/02/2026</span>
+    </div>
+    <p class="text-xs font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-900' }}">Avaliação e Engenharia Pedagógica</p>
+    
+    {{-- LISTA V1.7 COMPLETA --}}
+    <ul class="mt-2 space-y-1 text-[10px] font-medium hidden group-hover:block {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-700' }}">
+    <li>{!! $iconCheck !!} **Mural de Rendimento por Competências:** Boletim de aproveitamento síncrono e integrado por aluno de acordo com as diretrizes do SENAI-SP.</li>
+<li>{!! $iconCheck !!} **Mapeamento Multimodal por IA (Gemini 3):** Importador automatizado de planos de curso oficiais em PDF com extração e alinhamento de capacidades técnicas por IA.</li>
+<li>{!! $iconCheck !!} **Painel de Proficiência Individual (BI):** Cruzamento de dados de lead times, atrasos e gargalos reais do BI diretamente na tela de avaliação do aluno.</li>
+        <li>{!! $iconCheck !!} **Calibragem de Inspeção Manual:** Chave global do Game Master para liberar ou travar botões binários de decisão (Aprovar/Reprovar, Boas/Refugo) em múltiplos setores (WMS e MES).</li>
+        <li>{!! $iconCheck !!} **Relógio de Jogo Sincronizado:** Proteção ativa que congela o relógio automático de data-game imediatamente ao pausar a simulação do professor.</li>
+        </ul>
+    <p class="text-[8px] font-bold mt-1 group-hover:hidden italic {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-300' }}">Passe o mouse para detalhes...</p>
+</div>
 
-                                <li>{!! $iconCheck !!} **Torre de Controle:** Monitor Andon com rastreabilidade cronológica.</li>
-                                <li>{!! $iconCheck !!} **Engenharia do Caos:** Sabotagem programada de Carga e Refugo.</li>
-                                <li>{!! $iconCheck !!} **BI Executivo:** Dashboard Dark Mode com indicadores (OEE, OTIF).</li>
-                                <li>{!! $iconCheck !!} **Regras de Mercado:** Limitador de cota de vendas diárias por aluno.</li>
-                                <li>{!! $iconCheck !!} **UX Blindada:** Modais de confirmação com trava física de duplo clique.</li>
-                                <li>{!! $iconCheck !!} **Manual Vivo:** Sistema de documentação técnica editável por setor.</li>
-                                <li>{!! $iconCheck !!} **Consolidação Logística:** Validação física de lotes produzidos.</li>
-                                <li>{!! $iconCheck !!} **Design System:** Interface Industrial 3D Neo-Brutalism.</li>
-                                <li>{!! $iconCheck !!} **Multi-Professor:** Isolamento total por docente.</li>
-                                <li>{!! $iconCheck !!} **Segurança:** Senha Mestra para ações destrutivas.</li>
-                                <li>{!! $iconCheck !!} **Integridade:** Soft Deletes (Lixeira Segura).</li>
-                                <li>{!! $iconCheck !!} **Perfil:** Dados corporativos integrados.</li>
-                            </ul>
-                            <p class="text-[8px] font-bold mt-1 group-hover:hidden italic {{ $isPcdGlobal ? 'text-yellow-400' : 'text-indigo-300' }}">Passe o mouse para detalhes...</p>
-                        </div>
+                        <!-- VERSÃO 1.6 (Revolution) -->
+<div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-4 border-yellow-400' : 'bg-gray-50 border-2 border-gray-400 hover:shadow-[5px_5px_0px_0px_rgba(156,163,175,1)]' }} mb-4">
+    <div class="flex justify-between items-center mb-2">
+        {{-- Badge mudou de bg-indigo-600 para bg-gray-500 --}}
+        <span class="px-2 py-0.5 rounded font-black text-[10px] {{ $isPcdGlobal ? 'bg-yellow-400 text-black' : 'bg-gray-500 text-white' }}">v1.6 (Revolution)</span>
+        {{-- Data mudou de text-indigo-400 para text-gray-400 --}}
+        <span class="text-[10px] font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">20/02/2026</span>
+    </div>
+    {{-- Título mudou de text-indigo-900 para text-gray-600 --}}
+    <p class="text-xs font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-600' }}">Inteligência e Economia Real</p>
+    
+    {{-- LISTA V1.6 COMPLETA (Preservando todas as 10 capacidades intactas) --}}
+    {{-- Texto da lista mudou de text-indigo-700 para text-gray-500 --}}
+    <ul class="mt-2 space-y-1 text-[10px] font-medium hidden group-hover:block {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-500' }}">
+        <li>{!! $iconCheck !!} **Aba Performance (BI):** Novo painel dedicado ao rastreio de agilidade da equipe.</li>
+        <li>{!! $iconCheck !!} **Lead Time Analytics:** Gráfico mestre de tempo médio gasto em Vendas, Compras e Produção.</li>
+        <li>{!! $iconCheck !!} **Filtros de Produtividade:** Avaliação individual de alunos e gargalos por SKU (Gargalômetro).</li>
+        <li>{!! $iconCheck !!} **Gênesis IA:** Povoamento automatizado de dados via Google Gemini.</li>
+        <li>{!! $iconCheck !!} **Motor de Demanda:** IA de mercado gerando pedidos de compra realistas.</li>
+        <li>{!! $iconCheck !!} **Mural de Vendas:** Interface de reserva de documentos ("Assumir Pedido").</li>
+        <li>{!! $iconCheck !!} **Validação de Ferro:** Auditoria rígida contra erros de digitação de pedidos.</li>
+        <li>{!! $iconCheck !!} **Banco Central:** Gestão de capital de giro e saldo para compras (Cash Flow).</li>
+        <li>{!! $iconCheck !!} **Relógio Automático:** Sistema de avanço temporal autônomo (Scheduler).</li>
+        <li>{!! $iconCheck !!} **Painel Master 2.0:** Nova arquitetura horizontal com foco em monitoramento.</li>
+    </ul>
+    {{-- Texto de ajuda mudou de text-indigo-300 para text-gray-400 --}}
+    <p class="text-[8px] font-bold mt-1 group-hover:hidden italic {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Passe o mouse para detalhes...</p>
+</div>
 
+                        <!-- VERSÃO 1.5 (LEGADO/CINZA) -->
+<div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-4 border-yellow-400' : 'bg-gray-50 border-2 border-gray-400 hover:shadow-[5px_5px_0px_0px_rgba(156,163,175,1)]' }} mb-4">
+    <div class="flex justify-between items-center mb-2">
+        {{-- Badge mudou de bg-indigo-600 para bg-gray-500 --}}
+        <span class="px-2 py-0.5 rounded font-black text-[10px] {{ $isPcdGlobal ? 'bg-yellow-400 text-black' : 'bg-gray-500 text-white' }}">v1.5 (Stable)</span>
+        {{-- Data mudou de text-indigo-400 para text-gray-400 --}}
+        <span class="text-[10px] font-bold {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">05/01/2026</span>
+    </div>
+    {{-- Título mudou de text-indigo-900 para text-gray-600 --}}
+    <p class="text-xs font-black uppercase {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-600' }}">Reforma Industrial e de Segurança</p>
+    
+    {{-- LISTA V1.5 COMPLETA --}}
+    {{-- Texto da lista mudou de text-indigo-700 para text-gray-500 --}}
+    <ul class="mt-2 space-y-1 text-[10px] font-medium hidden group-hover:block {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-500' }}">
+        <li>{!! $iconCheck !!} **Visual:** Modo Alto Contraste (Preto e Amarelo Neon).</li>
+        <li>{!! $iconCheck !!} **Inclusão 4.0:** Motor de Voz e Tradutor de Libras.</li>
+        <li>{!! $iconCheck !!} **Acessibilidade:** Pictogramas e Navegação Assistida.</li>
+        <li>{!! $iconCheck !!} **Torre de Controle:** Monitor Andon com rastreabilidade cronológica.</li>
+        <li>{!! $iconCheck !!} **Engenharia do Caos:** Sabotagem programada de Carga e Refugo.</li>
+        <li>{!! $iconCheck !!} **BI Executivo:** Dashboard Dark Mode com indicadores (OEE, OTIF).</li>
+        <li>{!! $iconCheck !!} **Regras de Mercado:** Limitador de cota de vendas diárias por aluno.</li>
+        <li>{!! $iconCheck !!} **UX Blindada:** Modais de confirmação com trava física de duplo clique.</li>
+        <li>{!! $iconCheck !!} **Manual Vivo:** Sistema de documentação técnica editável por setor.</li>
+        <li>{!! $iconCheck !!} **Consolidação Logística:** Validação física de lotes produzidos.</li>
+        <li>{!! $iconCheck !!} **Design System:** Interface Industrial 3D Neo-Brutalism.</li>
+        <li>{!! $iconCheck !!} **Multi-Professor:** Isolamento total por docente.</li>
+        <li>{!! $iconCheck !!} **Segurança:** Senha Mestra para ações destrutivas.</li>
+        <li>{!! $iconCheck !!} **Integridade:** Soft Deletes (Lixeira Segura).</li>
+        <li>{!! $iconCheck !!} **Perfil:** Dados corporativos integrados.</li>
+    </ul>
+    {{-- Texto de ajuda mudou de text-indigo-300 para text-gray-400 --}}
+    <p class="text-[8px] font-bold mt-1 group-hover:hidden italic {{ $isPcdGlobal ? 'text-yellow-400' : 'text-gray-400' }}">Passe o mouse para detalhes...</p>
+</div>
                         <!-- VERSÃO 1.0 (LEGACY) -->
                         <div class="group relative p-3 rounded-lg transition-all {{ $isPcdGlobal ? 'bg-black border-2 border-yellow-400' : 'bg-gray-50 border-2 border-gray-300 grayscale hover:grayscale-0' }}">
                             <div class="flex justify-between items-center mb-2">
@@ -523,7 +576,7 @@ body.high-contrast .img-pcd-yellow {
 
 
     <!-- Notificação Customizada (Estilo Fábrica Digital) -->
-    <div id="notificacao-sucesso" class="fixed top-0 left-1/2 -translate-x-1/2 z-[200] w-full max-w-sm pointer-events-none">
+    <div id="notificacao-sucesso" class="fixed top-0 left-1/2 -translate-x-1/2 z-[200] w-full max-w-sm pointer-events-none no-print">
         <div class="bg-green-500 border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center gap-4">
             <div class="bg-white border-2 border-black w-10 h-10 flex items-center justify-center text-2xl">
                 ✅

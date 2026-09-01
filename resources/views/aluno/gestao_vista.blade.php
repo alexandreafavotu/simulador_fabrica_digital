@@ -54,9 +54,9 @@ Sair do Setor
                     <h3 class="font-black text-xl uppercase tracking-tighter border-b-4 border-black inline-block">Monitor de Produção em Tempo Real</h3>
                 </div>
 
-                <div class="bg-white border-4 border-black shadow-[10px_10px_0px_0px_black]">
+                <div class="bg-white border-4 border-black shadow-[10px_10px_0px_0px_black] {{ Auth::user()->acessibilidade_visual ? 'border-yellow-400' : '' }}">
                     <table class="w-full text-left">
-                        <thead class="bg-black text-white uppercase text-[11px] tracking-widest">
+                        <thead class="bg-black text-white uppercase text-[11px] tracking-widest {{ Auth::user()->acessibilidade_visual ? 'border-b-2 border-yellow-400' : '' }}">
                             <tr>
                                 <th class="px-4 py-4 w-24">ID</th>
                                 <th class="px-4 py-4">Cliente</th>
@@ -66,7 +66,7 @@ Sair do Setor
                                 <th class="px-4 py-4 text-center">Entrega</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y-2 divide-black">
+                        <tbody class="divide-y-2 {{ Auth::user()->acessibilidade_visual ? 'divide-yellow-400' : 'divide-black' }}">
                             @foreach($pedidos as $pedido)
                                 @foreach($pedido->itens as $item)
                                     @include('aluno.partials.gestao_vista_row', ['p' => $pedido, 'i' => $item, 'isHistory' => false])
@@ -86,9 +86,9 @@ Sair do Setor
                     <h3 class="font-black text-xl uppercase tracking-tighter border-b-4 border-gray-400 inline-block text-gray-500 italic">Arquivo Morto (Histórico Concluído)</h3>
                 </div>
 
-                <div class="bg-gray-200 border-4 border-gray-400 shadow-[10px_10px_0px_0px_rgba(0,0,0,0.2)] grayscale-[0.5] hover:grayscale-0 transition-all duration-700">
+                <div class="bg-gray-200 border-4 border-gray-400 shadow-[10px_10px_0px_0px_rgba(0,0,0,0.2)] grayscale-[0.5] hover:grayscale-0 transition-all duration-700 {{ Auth::user()->acessibilidade_visual ? 'border-yellow-400' : '' }}">
                     <table class="w-full text-left">
-                        <thead class="bg-gray-600 text-white uppercase text-[10px] tracking-widest">
+                        <thead class="bg-gray-600 text-white uppercase text-[10px] tracking-widest {{ Auth::user()->acessibilidade_visual ? 'border-b-2 border-yellow-400' : '' }}">
                             <tr>
                                 <th class="px-4 py-3 w-24">ID</th>
                                 <th class="px-4 py-3">Cliente</th>
@@ -98,7 +98,7 @@ Sair do Setor
                                 <th class="px-4 py-3 text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-300">
+                        <tbody class="divide-y {{ Auth::user()->acessibilidade_visual ? 'divide-yellow-400' : 'divide-black' }}">
                             @foreach($historico as $pedido)
                                 @foreach($pedido->itens as $item)
                                     @include('aluno.partials.gestao_vista_row', ['p' => $pedido, 'i' => $item, 'isHistory' => true])

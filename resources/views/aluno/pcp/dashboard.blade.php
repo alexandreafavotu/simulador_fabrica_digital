@@ -184,7 +184,7 @@
 
         <th class="px-6 py-0 text-center">
             @if(Auth::user()?->acessibilidade_pictogramas)
-                <img src="{{ asset('img/pictogramas/data_prometida.png') }}"
+                <img src="{{ asset('img/pictogramas/vendas.png') }}"
                      class="w-20 h-20 object-contain mx-auto {{ Auth::user()->acessibilidade_visual ? 'img-pcd-yellow' : '' }}">
             @endif
         </th>

@@ -14,12 +14,18 @@ use App\Models\ProdutoAcabado;
 use App\Models\LocalEstoque;
 use App\Models\NotaFiscal;
 use Carbon\Carbon;
+use App\Models\DemandaMercado;
+use App\Models\Aluno;
 
 class RelatoriosController extends Controller
 {
     public function index(Request $request, $turmaId)
     {
         $turma = Turma::findOrFail($turmaId);
+        $alunoId = $request->input('aluno_id');
+$produtoId = $request->input('produto_id');
+$listaAlunos = Aluno::where('turma_id', $turmaId)->get();
+$listaProdutos = ProdutoAcabado::where('turma_id', $turmaId)->orWhereNull('turma_id')->get();
 
         // --- FILTROS DE TEMPO (INTELIGÊNCIA DE DATA) ---
         $dtInicio = $request->input('data_inicio');
@@ -230,7 +236,80 @@ class RelatoriosController extends Controller
                 'giro' => 4.5,
                 'doca_saida' => $docaSaida
             ]
+
         ];
+
+        // --- CÁLCULO DE GARGALOS (ITENS PARADOS POR SETOR AGORA) ---
+$gargalosSetores = [
+    'Vendas' => \App\Models\DemandaMercado::where('turma_id', $turmaId)
+                ->where('status', 'Pendente')
+                ->when($alunoId, fn($q) => $q->where('aluno_id', $alunoId)) // Filtro de Aluno
+                ->count(),
+    
+    'Compras' => \App\Models\OrdemCompra::whereHas('pedido', fn($q)=>$q->where('turma_id', $turmaId)
+                ->when($alunoId, fn($sq) => $sq->where('aluno_id', $alunoId))) // Filtro de Aluno
+                ->where('status', 'Pendente')->count(),
+    
+    'WMS' => \App\Models\MateriaPrima::where('turma_id', $turmaId)->where('quantidade_estoque', '>', 0)->whereNull('local_estoque_id')->count(),
+    
+    'Produção' => \App\Models\OrdemProducao::whereHas('pedido', fn($q)=>$q->where('turma_id', $turmaId)
+                  ->when($alunoId, fn($sq) => $sq->where('aluno_id', $alunoId))) // Filtro de Aluno
+                  ->when($produtoId, fn($q) => $q->where('produto_acabado_id', $produtoId)) // Filtro de Produto
+                  ->where('status', 'Aberta')->count(),
+    
+    'Expedição' => \App\Models\PedidoVenda::where('turma_id', $turmaId)->where('status', 'Em Produção')
+                   ->when($alunoId, fn($q) => $q->where('aluno_id', $alunoId)) // Filtro de Aluno
+                   ->whereDoesntHave('ordensProducao', fn($q)=>$q->where('embalado', false))->count(),
+];
+
+$dataJogoStr = $turma->data_jogo ? \Carbon\Carbon::parse($turma->data_jogo)->toDateTimeString() : now()->toDateTimeString();
+$atrasoProdutos = DB::table('pedidos_venda')
+    ->join('pedido_venda_itens', 'pedidos_venda.id', '=', 'pedido_venda_itens.pedido_venda_id')
+    ->join('produtos_acabados', 'pedido_venda_itens.produto_acabado_id', '=', 'produtos_acabados.id')
+    ->where('pedidos_venda.turma_id', $turmaId)
+    ->where('pedidos_venda.status', '!=', 'Faturado')
+    ->whereDate('pedidos_venda.data_entrega_solicitada', '<', $turma->data_jogo)
+    ->when($alunoId, fn($q) => $q->where('pedidos_venda.aluno_id', $alunoId)) // Filtro de Aluno
+    ->when($produtoId, fn($q) => $q->where('pedido_venda_itens.produto_acabado_id', $produtoId)) // Filtro Produto
+    ->select('produtos_acabados.nome', DB::raw("SUM(DATEDIFF('{$dataJogoStr}', pedidos_venda.data_entrega_solicitada)) as total_dias"))
+    ->groupBy('produtos_acabados.nome')->orderByDesc('total_dias')->limit(5)->get();
+
+// --- TENDÊNCIA DE RECEITA (AUMENTO/DIMINUIÇÃO) ---
+$tendenciaReceita = \App\Models\NotaFiscal::whereHas('pedido', function($q) use ($turmaId, $alunoId) {
+        $q->where('turma_id', $turmaId);
+        if($alunoId) $q->where('aluno_id', $alunoId); // Filtro de Aluno
+    })
+    ->select(DB::raw('DATE(data_emissao) as data'), DB::raw('SUM(valor_total) as total'))
+    ->groupBy('data')->orderBy('data')->get();
+
+// --- GRÁFICO MASTER: LEAD TIME POR ETAPA (MÉDIA DE DIAS) ---
+$leadTimes = [
+    'Vendas' => DB::table('demandas_mercado')->join('pedidos_venda', 'demandas_mercado.cliente_id', '=', 'pedidos_venda.cliente_id')
+                ->where('demandas_mercado.turma_id', $turmaId)->where('demandas_mercado.status', 'Atendido')
+                ->when($alunoId, fn($q) => $q->where('pedidos_venda.aluno_id', $alunoId)) // Filtro de Aluno
+                ->select(DB::raw('AVG(DATEDIFF(pedidos_venda.data_pedido, demandas_mercado.data_jogo_emissao)) as media'))->first()->media ?? 0,
+    
+    'Compras' => \App\Models\OrdemCompra::whereHas('pedido', fn($q)=>$q->where('turma_id', $turmaId)
+                 ->when($alunoId, fn($sq) => $sq->where('aluno_id', $alunoId))) // Filtro de Aluno
+                ->where('status', 'Concluído')
+                ->select(DB::raw('AVG(DATEDIFF(updated_at, created_at)) as media'))->first()->media ?? 0,
+                
+    'Produção' => \App\Models\OrdemProducao::whereHas('pedido', fn($q)=>$q->where('turma_id', $turmaId)
+                  ->when($alunoId, fn($sq) => $sq->where('aluno_id', $alunoId))) // Filtro de Aluno
+                ->when($produtoId, fn($q) => $q->where('produto_acabado_id', $produtoId)) // Filtro de Produto
+                ->where('status', 'Concluída')
+                ->select(DB::raw('AVG(DATEDIFF(data_fim, data_inicio_real)) as media'))->first()->media ?? 0,
+];
+
+// INJETANDO TUDO NO ARRAY DE DADOS PARA A VIEW
+$dados['performance'] = [
+    'gargalos' => $gargalosSetores,
+    'atrasos_produtos' => $atrasoProdutos,
+    'tendencia_receita' => $tendenciaReceita,
+    'lead_times' => $leadTimes,
+    'lista_alunos' => $listaAlunos,
+    'lista_produtos' => $listaProdutos
+];
 
         return view('professor.bi.index', compact('turma', 'dados'));
     }

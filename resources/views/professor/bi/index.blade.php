@@ -51,7 +51,7 @@
         .text-neon-orange { color: #fbbf24; text-shadow: 0 0 5px rgba(251, 191, 36, 0.3); }
     </style>
 
-    <div class="py-6 min-h-screen" x-data="{ activeTab: 'geral' }">
+    <div class="py-6 min-h-screen" x-data="{ activeTab: '{{ request('tab', 'geral') }}' }">
         <div class="max-w-[98%] mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- CABEÇALHO --}}
@@ -100,12 +100,13 @@
                 </form>
 
                 {{-- Navegação --}}
-                <div class="flex gap-2">
-                    <button @click="activeTab = 'geral'" :class="activeTab === 'geral' ? 'active' : ''" class="nav-btn">Geral</button>
-                    <button @click="activeTab = 'comercial'" :class="activeTab === 'comercial' ? 'active' : ''" class="nav-btn">Comercial</button>
-                    <button @click="activeTab = 'industrial'" :class="activeTab === 'industrial' ? 'active' : ''" class="nav-btn">Indústria</button>
-                    <button @click="activeTab = 'logistica'" :class="activeTab === 'logistica' ? 'active' : ''" class="nav-btn">Logística</button>
-                </div>
+                <div class="flex gap-0.5 items-center">
+    <button @click="activeTab = 'geral'" :class="activeTab === 'geral' ? 'active' : ''" class="nav-btn !px-3 !text-[10px]">Geral</button>
+    <button @click="activeTab = 'comercial'" :class="activeTab === 'comercial' ? 'active' : ''" class="nav-btn !px-3 !text-[10px]">Comercial</button>
+    <button @click="activeTab = 'industrial'" :class="activeTab === 'industrial' ? 'active' : ''" class="nav-btn !px-3 !text-[10px]">Indústria</button>
+    <button @click="activeTab = 'logistica'" :class="activeTab === 'logistica' ? 'active' : ''" class="nav-btn !px-3 !text-[10px]">Logística</button>
+    <button @click="activeTab = 'performance'" :class="activeTab === 'performance' ? 'active' : ''" class="nav-btn !px-3 !text-[10px]">Performance</button>
+</div>
 
                 <a href="{{ route('professor.monitoramento.index', $turma->id) }}" class="bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold py-2 px-4 rounded border border-gray-600 transition">
                     VOLTAR
@@ -359,8 +360,90 @@
                 </div>
             </div>
 
+            <!-- ABA PERFORMANCE OPERACIONAL -->
+
+    <div x-show="activeTab === 'performance'" class="space-y-6">
+    
+    
+    {{-- FILTROS ESPECÍFICOS --}}
+    <div class="bg-gray-800 border-2 border-indigo-500 p-4 rounded-xl flex flex-wrap gap-4 items-end shadow-[4px_4px_0px_0px_rgba(79,70,229,1)]">
+        <form method="GET" action="{{ request()->url() }}" class="flex flex-wrap gap-4 w-full">
+            <input type="hidden" name="tab" value="performance"> {{-- <--- ESTA É A MÁGICA --}}
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-[10px] font-black uppercase text-indigo-400 mb-1">Filtrar por Operador (Aluno)</label>
+                <select name="aluno_id" class="w-full bg-gray-900 border-2 border-gray-700 text-white text-xs font-bold rounded p-2 focus:border-indigo-500">
+                    <option value="">Todos os Alunos</option>
+                    @foreach($dados['performance']['lista_alunos'] as $al)
+                        <option value="{{ $al->id }}" {{ request('aluno_id') == $al->id ? 'selected' : '' }}>{{ $al->nome }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-[10px] font-black uppercase text-indigo-400 mb-1">Filtrar por Produto acabado</label>
+                <select name="produto_id" class="w-full bg-gray-900 border-2 border-gray-700 text-white text-xs font-bold rounded p-2 focus:border-indigo-500">
+                    <option value="">Todos os Produtos</option>
+                    @foreach($dados['performance']['lista_produtos'] as $pr)
+                        <option value="{{ $pr->id }}" {{ request('produto_id') == $pr->id ? 'selected' : '' }}>{{ $pr->nome }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded border-2 border-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_black] transition-all">
+                Aplicar Filtros Analíticos
+            </button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {{-- GRÁFICO MASTER: LEAD TIME POR ETAPA --}}
+        <div class="lg:col-span-2 bg-gray-800 border-2 border-gray-700 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-white font-black uppercase text-sm mb-6 flex items-center gap-2">
+                <span class="text-xl">⏱️</span> Ciclo de Vida do Pedido (Lead Time Médio em Dias)
+            </h3>
+            <canvas id="chartLeadTime" height="150"></canvas>
+        </div>
+
+        {{-- RANKING DE ATRASO POR PRODUTO --}}
+        <div class="bg-gray-800 border-2 border-gray-700 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-white font-black uppercase text-sm mb-6 flex items-center gap-2">
+                <span class="text-xl">🚨</span> Top 5 Produtos com Mais Atraso
+            </h3>
+            <div class="space-y-4">
+                @forelse($dados['performance']['atrasos_produtos'] as $atr)
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <span class="text-[10px] font-bold text-gray-300 uppercase">{{ $atr->nome }}</span>
+                        <span class="bg-red-900 text-red-200 px-2 py-0.5 rounded border border-red-700 font-black text-xs">
+                            {{ $atr->total_dias }} Dias Acumulados
+                        </span>
+                    </div>
+                @empty
+                    <p class="text-gray-500 italic text-center py-10">Nenhum atraso detectado.</p>
+                @endforelse
+            </div>
+        </div>
+
+        {{-- GARGALÔMETRO POR SETOR --}}
+        <div class="bg-gray-800 border-2 border-gray-700 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-white font-black uppercase text-sm mb-6 flex items-center gap-2">
+                <span class="text-xl">🚧</span> Gargalômetro: Operações Paradas agora
+            </h3>
+            <canvas id="chartGargalos"></canvas>
+        </div>
+
+        {{-- TENDÊNCIA DE RECEITA --}}
+        <div class="lg:col-span-2 bg-gray-800 border-2 border-gray-700 p-6 rounded-2xl shadow-xl">
+            <h3 class="text-white font-black uppercase text-sm mb-6 flex items-center gap-2">
+                <span class="text-xl">📈</span> Evolução da Receita Bruta (Crescimento)
+            </h3>
+            <canvas id="chartTendencia" height="120"></canvas>
         </div>
     </div>
+</div>
+
+        </div>
+    </div>
+
+
 
     {{-- SCRIPTS (TODOS OS GRÁFICOS) --}}
     <script>
@@ -516,5 +599,71 @@
                 plugins: { legend: { display: false } }
             }
         });
+        // Aguarda o documento carregar para evitar erros de ordem
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Gráfico de Lead Time
+    const ctxLT = document.getElementById('chartLeadTime');
+    if (ctxLT) {
+        new Chart(ctxLT, {
+            type: 'bar',
+            data: {
+                labels: ['Vendas', 'Suprimentos', 'Produção'],
+                datasets: [{
+                    label: 'Dias',
+                    data: [
+                        {{ $dados['performance']['lead_times']['Vendas'] ?? 0 }},
+                        {{ $dados['performance']['lead_times']['Compras'] ?? 0 }},
+                        {{ $dados['performance']['lead_times']['Produção'] ?? 0 }}
+                    ],
+                    backgroundColor: ['#6366f1', '#a855f7', '#eab308']
+                }]
+            },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+        });
+    }
+
+    // Gráfico de Gargalos
+    const ctxG = document.getElementById('chartGargalos');
+    if (ctxG) {
+        new Chart(ctxG, {
+            type: 'doughnut',
+            data: {
+                labels: ['Vendas', 'Compras', 'WMS', 'Produção', 'Expedição'],
+                datasets: [{
+                    data: [
+                        {{ $dados['performance']['gargalos']['Vendas'] ?? 0 }},
+                        {{ $dados['performance']['gargalos']['Compras'] ?? 0 }},
+                        {{ $dados['performance']['gargalos']['WMS'] ?? 0 }},
+                        {{ $dados['performance']['gargalos']['Produção'] ?? 0 }},
+                        {{ $dados['performance']['gargalos']['Expedição'] ?? 0 }}
+                    ],
+                    backgroundColor: ['#ec4899', '#8b5cf6', '#f97316', '#eab308', '#14b8a6']
+                }]
+            }
+        });
+    }
+
+    
+    // Gráfico de Tendência (Com a proteção do collect)
+    const ctxT = document.getElementById('chartTendencia');
+    if (ctxT) {
+        new Chart(ctxT, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode(collect($dados['performance']['tendencia_receita'] ?? [])->pluck('data')) !!},
+                datasets: [{
+                    label: 'Receita',
+                    data: {!! json_encode(collect($dados['performance']['tendencia_receita'] ?? [])->pluck('total')) !!},
+                    borderColor: '#22c55e',
+                    fill: true,
+                    tension: 0.4
+                }]
+            }
+        });
+    }
+});
+
+
     </script>
 </x-app-layout>

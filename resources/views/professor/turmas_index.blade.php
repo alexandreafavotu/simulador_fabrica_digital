@@ -237,14 +237,22 @@
                     <div class="space-y-4">
                         <h4 class="font-black text-xs text-indigo-600 uppercase border-b-2 border-indigo-100 pb-1">2. Dados Jurídicos e Contato</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-black text-gray-700 uppercase">CNPJ</label>
-                                <input type="text" name="cnpj" placeholder="00.000.000/0001-00" class="w-full border-2 border-black p-2 rounded shadow-[2px_2px_0px_0px_black] focus:ring-0">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-black text-gray-700 uppercase">Telefone</label>
-                                <input type="text" name="telefone" placeholder="(11) 4002-8922" class="w-full border-2 border-black p-2 rounded shadow-[2px_2px_0px_0px_black] focus:ring-0">
-                            </div>
+    {{-- 1. CAMPO DINÂMICO CNPJ OU CPF COM MÁSCARA AUTOMÁTICA EM TEMPO REAL --}}
+    <div>
+        <label class="block text-[10px] font-black text-gray-700 uppercase">CNPJ ou CPF</label>
+        <input type="text" name="cnpj" placeholder="00.000.000/0001-00 ou 000.000.000-00" maxlength="18"
+               oninput="let v = this.value.replace(/\D/g, '').slice(0, 14); if (v.length <= 11) { v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); } else { v = v.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2'); } this.value = v;"
+               class="w-full border-2 border-black p-2 rounded shadow-[2px_2px_0px_0px_black] focus:ring-0 font-mono bg-white">
+    </div>
+
+    {{-- 2. CAMPO TELEFONE COM MÁSCARA DINÂMICA (CELULAR OU FIXO) --}}
+    <div>
+        <label class="block text-[10px] font-black text-gray-700 uppercase">Telefone</label>
+        <input type="text" name="telefone" placeholder="(11) 99999-9999" maxlength="15"
+               oninput="let v = this.value.replace(/\D/g, '').slice(0, 11); if (v.length > 10) { this.value = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3'); } else if (v.length > 5) { this.value = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3'); } else if (v.length > 2) { this.value = v.replace(/^(\d{2})(\d{0,5})$/, '($1) $2'); } else { this.value = v; }"
+               class="w-full border-2 border-black p-2 rounded shadow-[2px_2px_0px_0px_black] focus:ring-0 bg-white">
+    </div>
+</div>
                             <div class="md:col-span-2">
                                 <label class="block text-[10px] font-black text-gray-700 uppercase">Resumo da Empresa</label>
                                 <textarea name="resumo" rows="2" placeholder="Breve descrição..." class="w-full border-2 border-black p-2 rounded shadow-[2px_2px_0px_0px_black] focus:ring-0"></textarea>

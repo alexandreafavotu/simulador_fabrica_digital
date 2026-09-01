@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Assim que o aluno bloqueado clicar em qualquer link, ele cai.
         $middleware->web(append: [
             \App\Http\Middleware\CheckUserActive::class,
+            \App\Http\Middleware\CheckRelogio::class, // <--- ADICIONE ESTA LINHA
         ]);
     })
 

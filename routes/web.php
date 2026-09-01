@@ -85,6 +85,8 @@ Route::get('/gestao-a-vista/{turma_id?}', [App\Http\Controllers\AlunoController:
         // --- GESTÃO DE ALUNOS (NOVO MODELO: GLOBAL & ESCALAÇÃO) ---
         Route::get('/professor/global/alunos', [ProfessorController::class, 'gerenciarCadastroGlobal'])->name('professor.global.alunos');
         Route::post('/professor/global/alunos', [ProfessorController::class, 'salvarAlunoGlobal'])->name('professor.global.store');
+        Route::post('/professor/global/alunos/importar', [ProfessorController::class, 'importarAlunosEmMassa'])->name('professor.global.importar');
+        Route::get('/professor/global/alunos/modelo-csv', [ProfessorController::class, 'downloadModeloAlunosCsv'])->name('professor.global.modelo_csv');
         Route::delete('/professor/global/alunos/{user}', [ProfessorController::class, 'excluirAlunoGlobal'])->name('professor.global.destroy');
         Route::post('/professor/global/alunos/{user}/resetar', [ProfessorController::class, 'resetarSenhaAluno'])->name('professor.global.resetar');
 
@@ -105,6 +107,13 @@ Route::delete('/professor/turmas/{turma}', [ProfessorController::class, 'excluir
         Route::put('/professor/turmas/aluno/{id}/setor', [ProfessorController::class, 'definirSetor'])->name('professor.turmas.setor');
 
         Route::put('/professor/turmas/{id}/capacidade', [ProfessorController::class, 'atualizarCapacidadeProducao'])->name('professor.turmas.capacidade');
+
+        //Rota para Genisis IA
+        Route::post('/professor/genesis/gerar', [App\Http\Controllers\GenesisController::class, 'gerarEstrutura'])->name('professor.genesis.gerar');
+        Route::post('/professor/genesis/salvar', [App\Http\Controllers\GenesisController::class, 'salvarEstrutura'])->name('professor.genesis.salvar');
+        Route::post('/professor/turmas/{id}/gerar-demanda', [ProfessorController::class, 'gerarDemandaMercado'])->name('professor.turmas.gerar_demanda');
+
+
         // Rota para Adormecer/Acordar Turma
         Route::patch('/professor/turmas/{turma}/arquivar', [ProfessorController::class, 'arquivarTurma'])->name('professor.turmas.arquivar');
 
@@ -158,7 +167,10 @@ Route::put('/professor/alunos/{user}/atualizar', [App\Http\Controllers\Professor
             // Rota para salvar o Limite de Vendas Diárias
 Route::put('/professor/turmas/{id}/limite-vendas', [ProfessorController::class, 'atualizarLimiteVendas'])->name('professor.turmas.limite_vendas');
 
-
+// Gestão Financeira e Relógio
+Route::get('/professor/turmas/{id}/financeiro', [ProfessorController::class, 'verFinanceiro'])->name('professor.turmas.financeiro');
+Route::put('/professor/turmas/{id}/injetar-capital', [ProfessorController::class, 'injetarCapital'])->name('professor.turmas.injetar_capital');
+Route::put('/professor/turmas/{id}/relogio', [ProfessorController::class, 'configurarRelogio'])->name('professor.turmas.relogio');
 
         // --- GESTÃO DE PEDIDOS (PROFESSOR) ---
         
@@ -188,6 +200,35 @@ Route::put('/professor/turmas/{id}/limite-vendas', [ProfessorController::class, 
 
         Route::post('/professor/simulacao/avancar', [ProfessorController::class, 'avancarTempo'])->name('professor.simulacao.avancar');
         Route::post('/professor/simulacao/resetar', [ProfessorController::class, 'resetarTempo'])->name('professor.simulacao.resetar');
+
+        // --- NOVO RECURSO: SISTEMA DE AVALIAÇÃO POR COMPETÊNCIAS ---
+            // 1. Tela de Filtro (Curso + Ano Letivo) e seleção de Alunos
+            Route::get('/professor/avaliacoes', [ProfessorController::class, 'indexAvaliacoes'])->name('professor.avaliacoes.index');
+            
+            // 2. Tela de Avaliação detalhada de um Aluno específico
+            Route::get('/professor/avaliacoes/aluno/{id}', [ProfessorController::class, 'avaliarAluno'])->name('professor.avaliacoes.aluno');
+            
+            // 3. Processamento para o professor salvar a avaliação socioemocional e notas
+            Route::post('/professor/avaliacoes/salvar/{id}', [ProfessorController::class, 'salvarAvaliacaoAluno'])->name('professor.avaliacoes.salvar');
+
+            // --- NOVO RECURSO: IMPORTADOR INTELIGENTE DE CURSOS VIA IA ---
+            // A. Exibe a tela de upload de plano de curso
+            Route::get('/professor/avaliacoes/importar', [ProfessorController::class, 'formImportarCurso'])->name('professor.avaliacoes.importar');
+            
+            // B. Envia o arquivo ao Gemini para extração (Gera a tela de Preview)
+            Route::post('/professor/avaliacoes/importar', [ProfessorController::class, 'processarImportarCurso'])->name('professor.avaliacoes.processar_importar');
+            
+            // C. Grava definitivamente as competências revisadas e editadas pelo professor no banco
+            Route::post('/professor/avaliacoes/confirmar-importar', [ProfessorController::class, 'confirmarImportarCurso'])->name('professor.avaliacoes.confirmar_importar');
+            
+            // D. Exclui a matriz de competências de um curso (Protegido por Senha Mestra)
+            Route::delete('/professor/avaliacoes/excluir-curso', [ProfessorController::class, 'excluirMatrizCurso'])
+                ->middleware(\App\Http\Middleware\ProtecaoSenhaMestra::class)
+                ->name('professor.avaliacoes.excluir_curso');
+
+            
+
+
         Route::post('/professor/simulacao/status', [ProfessorController::class, 'alterarStatusJogo'])->name('professor.simulacao.status');
         // Rota protegida por Senha Mestra (Geração de WMS é destrutiva)
         Route::post('/professor/estoque/gerar-mapa', [ProfessorController::class, 'gerarMapaEstoque'])
@@ -252,6 +293,8 @@ Route::get('/professor/monitorar/{turma_id}/bi', [App\Http\Controllers\Relatorio
         Route::get('/aluno/vendas', [AlunoController::class, 'gerenciarVendas'])->name('aluno.vendas.index');
         Route::post('/aluno/vendas', [AlunoController::class, 'salvarVenda'])->name('aluno.vendas.store');
     });
+    // Dentro do middleware setor:vendas
+Route::post('/aluno/vendas/assumir/{id}', [AlunoController::class, 'assumirDemanda'])->name('aluno.vendas.assumir');
 
     // --- Módulo PCP ---
     Route::middleware('setor:pcp')->group(function () {

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Aluno;
 use App\Models\PedidoVenda;
 use App\Models\OrdemProducao;
@@ -17,6 +19,8 @@ use App\Models\LocalEstoque;
 use App\Models\SolicitacaoSeparacao;
 use App\Models\ApontamentoProducao;
 use App\Models\NotaFiscal;
+use App\Models\DemandaMercado;
+use App\Models\DemandaMercadoItem;
 
 class AlunoController extends Controller
 {
@@ -505,30 +509,62 @@ class AlunoController extends Controller
             'fornecedor_id' => 'required|exists:fornecedores,id',
         ]);
 
-        // 2. Busca a Ordem de Compra (OC), mas GARANTE que ela pertence à turma ativa do aluno
-        // Usamos whereHas('pedido') porque o turma_id está na tabela de pedidos vinculada
-        $compra = OrdemCompra::whereHas('pedido', function($q) use ($aluno) {
-                $q->where('turma_id', $aluno->turma_id);
-            })->findOrFail($id);
+        try {
+            return DB::transaction(function () use ($request, $id, $aluno) {
+                // 2. Busca a Ordem de Compra (OC), com trava e garantindo a posse da turma
+                $compra = OrdemCompra::whereHas('pedido', function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id);
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-        // 3. Busca o Fornecedor garantindo que ele é desta empresa ou Global
-        $fornecedor = Fornecedor::where(function($q) use ($aluno) {
-                $q->where('turma_id', $aluno->turma_id)->orWhereNull('turma_id');
-            })->findOrFail($request->fornecedor_id);
+                // Evita que a mesma compra seja efetivada duas vezes se o aluno clicar 2x rápido
+                if ($compra->status != 'Pendente') {
+                    return redirect()->route('aluno.compras.dashboard')
+                        ->with('error', 'Esta ordem de compra já foi processada.');
+                }
 
-        // 4. Lógica de Tempo (Usando a data do jogo da Turma Ativa)
-        $dataJogo = $aluno->turma->data_jogo; 
-        $prazoDias = $fornecedor->tempo_entrega_dias;
-        $dataEntrega = \Carbon\Carbon::parse($dataJogo)->addDays($prazoDias);
+                // 3. Busca o Fornecedor (da turma ou Global)
+                $fornecedor = Fornecedor::where(function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id)->orWhereNull('turma_id');
+                    })->findOrFail($request->fornecedor_id);
 
-        // 5. Salva tudo (Mantida sua lógica original de atualização)
-        $compra->fornecedor_id = $request->fornecedor_id;
-        $compra->data_entrega_prevista = $dataEntrega;
-        $compra->status = 'Aguardando Entrega';
-        $compra->save();
+                // 4. Trava Financeira com trava no banco (saldo atualizado da turma)
+                $turma = \App\Models\Turma::where('id', $aluno->turma_id)->lockForUpdate()->first();
+                $custoTotal = $fornecedor->preco_unitario * $compra->quantidade;
 
-        return redirect()->route('aluno.compras.dashboard')->with('success', 
-            "Compra confirmada! Previsão de chegada: " . $dataEntrega->format('d/m/Y'));
+                if ($turma->capital_atual < $custoTotal) {
+                    return redirect()->back()->with('error', '❌ OPERAÇÃO CANCELADA: Saldo insuficiente em caixa para realizar esta compra. Custo: R$ ' . number_format($custoTotal, 2, ',', '.') . ' | Saldo: R$ ' . number_format($turma->capital_atual, 2, ',', '.'));
+                }
+
+                // Debita do caixa da empresa
+                $turma->decrement('capital_atual', $custoTotal);
+
+                // 5. Lógica de Tempo
+                $dataJogo = $turma->data_jogo; 
+                $prazoDias = (int)$fornecedor->tempo_entrega_dias;
+                $dataEntrega = \Carbon\Carbon::parse($dataJogo)->addDays($prazoDias);
+
+                // 6. Atualização segura da compra
+                $compra->fornecedor_id = $request->fornecedor_id;
+                
+                // Grava aluno_id APENAS se a coluna existir no banco de dados do servidor
+                if (Schema::hasColumn('ordens_compra', 'aluno_id')) {
+                    $compra->aluno_id = $aluno->id;
+                }
+                
+                $compra->data_entrega_prevista = $dataEntrega;
+                $compra->status = 'Aguardando Entrega';
+                $compra->save();
+
+                return redirect()->route('aluno.compras.dashboard')->with('success', 
+                    "Compra confirmada! Previsão de chegada: " . $dataEntrega->format('d/m/Y'));
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao efetivar compra: ' . $e->getMessage());
+            return redirect()->route('aluno.compras.dashboard')
+                ->with('error', 'Ocorreu um erro ao processar a compra: ' . $e->getMessage());
+        }
     }
 
     // --- GESTÃO DE MATÉRIAS-PRIMAS (ALUNO) ---
@@ -603,6 +639,32 @@ class AlunoController extends Controller
         $pedidos = [];
         $dadosStats = [];
 
+        // --- ETAPA 1: LÓGICA DE FILA E FOCO DO MURAL (MERCADO IA) ---
+        
+        // 1. Verifica se ESTE aluno já possui alguma reserva ativa dele pendente
+        $minhaReservaAtiva = DemandaMercado::with(['cliente', 'itens.produto'])
+            ->where('turma_id', $aluno->turma_id)
+            ->where('aluno_id', $aluno->id)
+            ->where('status', 'Pendente')
+            ->first();
+
+        if ($minhaReservaAtiva) {
+            // Se ele já tem uma reserva dele, mostre APENAS ela (esconde todas as outras)
+            $demandasMercado = collect([$minhaReservaAtiva]);
+        } else {
+            // Se não tem reserva, mostre apenas os pedidos do mercado que estão VAGOS (aluno_id nulo)
+            // Isso impede que dois alunos cliquem ou vejam o mesmo pedido ao mesmo tempo!
+            $demandasMercado = DemandaMercado::with(['cliente', 'itens.produto'])
+                ->where('turma_id', $aluno->turma_id)
+                ->whereNull('aluno_id')
+                ->where('status', 'Pendente')
+                ->get();
+        }
+
+        // Envia para a View
+        view()->share('demandasMercado', $demandasMercado);
+        // -----------------------------------------------------------
+
         switch ($modo) {
             case 'novo':
                 // Carrega dados para o formulário
@@ -669,27 +731,9 @@ class AlunoController extends Controller
     public function salvarVenda(Request $request)
     {
         $aluno = $this->getAlunoAtivo();
-
         if (!$aluno) {
             return redirect()->back()->with('error', 'Erro: Vínculo com a turma não encontrado.');
         }
-
-        // =========================================================================
-        //  LÓGICA DE BLOQUEIO (DIAGNÓSTICO CONFIRMADO: FUNCIONANDO)
-        // =========================================================================
-        $limiteDiario = $aluno->turma->limite_vendas_por_aluno ?? 10;
-        
-        // Conta pedidos DESTE aluno, NESTA data
-        $vendasHoje = \App\Models\PedidoVenda::where('turma_id', $aluno->turma_id)
-            ->where('aluno_id', $aluno->id)
-            ->whereDate('data_pedido', $aluno->turma->data_jogo)
-            ->count();
-
-        // Se Vendas (1) >= Limite (1), o sistema ENTRA aqui e bloqueia
-        if ($vendasHoje >= $limiteDiario) {
-            return redirect()->back()->with('error', "⛔ MERCADO FECHADO PARA VOCÊ: Seu limite diário é de {$limiteDiario} pedidos. Avance o tempo para vender mais.");
-        }
-        // =========================================================================
 
         $request->validate([
             'cliente_id' => 'required|exists:clientes,id',
@@ -699,37 +743,102 @@ class AlunoController extends Controller
             'itens.*.quantidade' => 'required|integer|min:1',
         ]);
 
-        $dataSimulacao = $aluno->turma->data_jogo;
-        $valorTotal = 0;
-        $itensParaSalvar = [];
-
-        foreach ($request->itens as $itemData) {
-            $produto = \App\Models\ProdutoAcabado::find($itemData['produto_id']);
-            $totalItem = $produto->preco_venda * $itemData['quantidade'];
-            $valorTotal += $totalItem;
-
-            $itensParaSalvar[] = [
-                'produto_acabado_id' => $itemData['produto_id'],
-                'quantidade' => $itemData['quantidade'],
-                'preco_unitario' => $produto->preco_venda,
-                'preco_total_item' => $totalItem,
-            ];
+        // 1. Limite diário por aluno
+        $limiteDiario = $aluno->turma->limite_vendas_por_aluno ?? 10;
+        
+        $vendasHoje = 0;
+        if (Schema::hasColumn('pedidos_venda', 'aluno_id')) {
+            $vendasHoje = PedidoVenda::where('turma_id', $aluno->turma_id)
+                ->where('aluno_id', $aluno->id)
+                ->whereDate('data_pedido', $aluno->turma->data_jogo)
+                ->count();
         }
 
-        // Cria o Pedido (Com a assinatura do aluno para contar na próxima)
-        $pedido = \App\Models\PedidoVenda::create([
-            'cliente_id' => $request->cliente_id,
-            'turma_id' => $aluno->turma_id,
-            'aluno_id' => $aluno->id, // Essencial para o bloqueio funcionar amanhã
-            'data_pedido' => $dataSimulacao,
-            'data_entrega_solicitada' => $request->data_entrega_solicitada,
-            'valor_total' => $valorTotal,
-            'status' => 'Novo',
-        ]);
+        if ($vendasHoje >= $limiteDiario) {
+            return redirect()->back()->withInput()->with('error', "⛔ MERCADO FECHADO PARA VOCÊ: Seu limite diário é de {$limiteDiario} pedidos. Avance o tempo para vender mais.");
+        }
 
-        $pedido->itens()->createMany($itensParaSalvar);
+        // 2. Se a tabela demandas_mercado existir e houver demanda, valida usando comparação segura de datas (whereDate)
+        $demandaCorrespondente = null;
+        if (Schema::hasTable('demandas_mercado')) {
+            $demandaQuery = DemandaMercado::where('cliente_id', $request->cliente_id)
+                ->whereDate('data_entrega_solicitada', $request->data_entrega_solicitada)
+                ->where('status', 'Pendente')
+                ->where(function($q) use ($aluno) {
+                    $q->where('aluno_id', $aluno->id)
+                      ->orWhere('turma_id', $aluno->turma_id);
+                })
+                ->with('itens');
 
-        return redirect()->route('aluno.vendas.index')->with('success', 'Pedido de Venda realizado na empresa: ' . $aluno->turma->nome_empresa);
+            $demandaCorrespondente = $demandaQuery->first();
+
+            if ($demandaCorrespondente) {
+                // Valida se a quantidade de produtos no formulário confere com a demanda
+                if (count($request->itens) != $demandaCorrespondente->itens->count()) {
+                    return redirect()->back()->withInput()->with('error', '❌ ERRO DE COMPOSIÇÃO: O número de itens informados não confere com a solicitação do mercado.');
+                }
+
+                // Valida produto e quantidade de cada item
+                foreach ($request->itens as $itemDigitado) {
+                    $itemCorreto = $demandaCorrespondente->itens()
+                        ->where('produto_acabado_id', $itemDigitado['produto_id'])
+                        ->where('quantidade', $itemDigitado['quantidade'])
+                        ->exists();
+
+                    if (!$itemCorreto) {
+                        return redirect()->back()->withInput()->with('error', '❌ ERRO DE DADOS: O Produto selecionado ou a Quantidade informada está incorreta para este pedido.');
+                    }
+                }
+            }
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $aluno, $demandaCorrespondente) {
+                $dataSimulacao = $aluno->turma->data_jogo;
+                $valorTotal = 0;
+                $itensParaSalvar = [];
+
+                foreach ($request->itens as $itemData) {
+                    $produto = ProdutoAcabado::findOrFail($itemData['produto_id']);
+                    $totalItem = $produto->preco_venda * $itemData['quantidade'];
+                    $valorTotal += $totalItem;
+
+                    $itensParaSalvar[] = [
+                        'produto_acabado_id' => $itemData['produto_id'],
+                        'quantidade' => $itemData['quantidade'],
+                        'preco_unitario' => $produto->preco_venda,
+                        'preco_total_item' => $totalItem,
+                    ];
+                }
+
+                $dadosPedido = [
+                    'cliente_id' => $request->cliente_id,
+                    'turma_id' => $aluno->turma_id,
+                    'data_pedido' => $dataSimulacao,
+                    'data_entrega_solicitada' => $request->data_entrega_solicitada,
+                    'valor_total' => $valorTotal,
+                    'status' => 'Novo',
+                ];
+
+                if (Schema::hasColumn('pedidos_venda', 'aluno_id')) {
+                    $dadosPedido['aluno_id'] = $aluno->id;
+                }
+
+                $pedido = PedidoVenda::create($dadosPedido);
+                $pedido->itens()->createMany($itensParaSalvar);
+
+                // Marca a demanda no mural como Atendida
+                if ($demandaCorrespondente) {
+                    $demandaCorrespondente->update(['status' => 'Atendido']);
+                }
+
+                return redirect()->route('aluno.vendas.index')
+                    ->with('success', 'Pedido de Venda realizado na empresa: ' . $aluno->turma->nome_empresa);
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao salvar venda: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Erro ao registrar venda: ' . $e->getMessage());
+        }
     }
     // --- MÓDULO ALMOXARIFADO (WMS) ---
 
@@ -792,33 +901,41 @@ class AlunoController extends Controller
             return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: O Almoxarifado está fechado para inventário/auditoria.');
         }
 
-        // 3. Busca a Ordem de Compra
-        $compra = \App\Models\OrdemCompra::with('materiaPrima')
-            ->whereHas('pedido', function($q) use ($aluno) {
-                $q->where('turma_id', $aluno->turma_id); 
-            })
-            ->findOrFail($id);
+        try {
+            return DB::transaction(function () use ($id, $aluno) {
+                // 3. Busca a Ordem de Compra com trava de banco
+                $compra = OrdemCompra::whereHas('pedido', function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id); 
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-        // 4. Validação
-        if ($compra->status != 'Aguardando Entrega') {
-            return redirect()->back()->with('error', 'Esta compra já foi recebida ou não está pronta.');
+                // 4. Validação (impede duplo recebimento se 2 alunos clicarem juntos)
+                if ($compra->status != 'Aguardando Entrega') {
+                    return redirect()->back()->with('error', 'Esta compra já foi recebida ou não está pronta.');
+                }
+
+                // 5. ATUALIZAÇÃO DE ESTOQUE (ENTRADA) COM TRAVA NA MATÉRIA-PRIMA
+                $materiaPrima = MateriaPrima::where('id', $compra->materia_prima_id)->lockForUpdate()->first();
+                if ($materiaPrima) {
+                    $materiaPrima->increment('quantidade_estoque', $compra->quantidade);
+                }
+
+                // 6. FINALIZA A COMPRA
+                $compra->status = 'Concluído'; 
+                
+                if (Schema::hasColumn('ordens_compra', 'aluno_id')) {
+                    $compra->aluno_id = $aluno->id;
+                }
+
+                $compra->save();
+
+                return redirect()->back()->with('success', 'Material recebido e armazenado! Verifique a lista de Picking para atender a produção.');
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao receber material: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao processar recebimento: ' . $e->getMessage());
         }
-
-        // 5. ATUALIZAÇÃO DE ESTOQUE (ENTRADA)
-        $materiaPrima = $compra->materiaPrima;
-        $materiaPrima->quantidade_estoque += $compra->quantidade;
-        $materiaPrima->save();
-
-        // 6. FINALIZA A COMPRA
-        $compra->status = 'Concluído'; 
-        $compra->save();
-
-        // --- RETIRADO O CROSS-DOCKING AUTOMÁTICO ---
-        // Agora o material fica no estoque e a Solicitação de Separação (Picking)
-        // continua 'Pendente'. O aluno TERÁ que ir na tela de Picking para
-        // enviar esse material para a produção manualmente.
-
-        return redirect()->back()->with('success', 'Material recebido e armazenado! Verifique a lista de Picking para atender a produção.');
     }
     // --- LÓGICA DE RECUSA DE MATERIAL ---
 
@@ -924,50 +1041,48 @@ public function mapaEstoque()
     
 
     public function armazenarMaterial(Request $request, $id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
 
-    // --- 2. TRAVA DE SEGURANÇA (CAOS) ---
-    // Usando o $aluno garantido pela âncora oficial
-    if ($this->verificarBloqueio($aluno, 'almoxarifado')) {
-        return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: O armazém está fechado para movimentação (Inventário).');
+        if ($this->verificarBloqueio($aluno, 'almoxarifado')) {
+            return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: O armazém está fechado para movimentação (Inventário).');
+        }
+
+        $request->validate([
+            'local_id' => 'required|exists:locais_estoque,id'
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request, $id, $aluno) {
+                $material = MateriaPrima::where(function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id)
+                          ->orWhereNull('turma_id');
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                $local = LocalEstoque::where('turma_id', $aluno->turma_id)
+                    ->lockForUpdate()
+                    ->findOrFail($request->local_id);
+
+                if ($local->ocupado) {
+                    return redirect()->back()->with('error', 'Este local já está ocupado!');
+                }
+
+                $material->local_estoque_id = $local->id;
+                $material->save();
+
+                $local->ocupado = true;
+                $local->save();
+
+                return redirect()->back()->with('success', "Material armazenado em {$local->codigo_visual}!");
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao armazenar material: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao armazenar material: ' . $e->getMessage());
+        }
     }
-    // ---------------------------------
-
-    // $id é o ID da Matéria-Prima
-    $request->validate([
-        'local_id' => 'required|exists:locais_estoque,id'
-    ]);
-
-    // --- 3. BUSCA O MATERIAL COM TRAVA DE ISOLAMENTO ---
-    // Garante que o material seja da turma dele OU um material global do sistema
-    $material = MateriaPrima::where(function($q) use ($aluno) {
-                    $q->where('turma_id', $aluno->turma_id)
-                      ->orWhereNull('turma_id');
-                })->findOrFail($id);
-
-    // --- 4. BUSCA O LOCAL (PRATELEIRA) COM TRAVA DE ISOLAMENTO ---
-    // Impede terminantemente que o material seja guardado em um endereço de outra turma
-    $local = LocalEstoque::where('turma_id', $aluno->turma_id)
-                         ->findOrFail($request->local_id);
-
-    // 5. Verifica se o local já está ocupado por OUTRO material (Sua lógica original)
-    if ($local->ocupado) {
-        return redirect()->back()->with('error', 'Este local já está ocupado!');
-    }
-
-    // 6. Atualiza o Material (Define o endereço) - Sua lógica original
-    $material->local_estoque_id = $local->id;
-    $material->save();
-
-    // 7. Atualiza o Local (Marca como ocupado) - Sua lógica original
-    $local->ocupado = true;
-    $local->save();
-
-    return redirect()->back()->with('success', "Material armazenado em {$local->codigo_visual}!");
-}
     // --- CONSULTA DE ESTOQUE (INVENTÁRIO) ---
     public function estoqueAlmoxarifado(Request $request)
 {
@@ -1222,243 +1337,242 @@ public function iniciarSeparacao($id)
     }
 
     public function confirmarSeparacao(Request $request, $id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
 
-    // --- 2. TRAVA DE SEGURANÇA (CAOS) ---
-    // Agora usando o $aluno garantido pela âncora oficial
-    if ($this->verificarBloqueio($aluno, 'almoxarifado')) {
-        return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: Separação suspensa por auditoria/inventário.');
-    }
-    // ---------------------------------
+        if ($this->verificarBloqueio($aluno, 'almoxarifado')) {
+            return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: Separação suspensa por auditoria/inventário.');
+        }
 
-    // --- 3. BUSCA A SOLICITAÇÃO COM TRAVA DE ISOLAMENTO HIERÁRQUICO ---
-    // Validamos se a Ordem de Produção/Pedido pertencem à turma do aluno
-    $solicitacao = \App\Models\SolicitacaoSeparacao::with(['materiaPrima', 'ordemProducao'])
-        ->whereHas('ordemProducao.pedido', function($q) use ($aluno) {
-            $q->where('turma_id', $aluno->turma_id); // <--- BLINDAGEM DE POSSE
-        })
-        ->findOrFail($id);
+        try {
+            return DB::transaction(function () use ($id, $aluno) {
+                $solicitacao = SolicitacaoSeparacao::with(['materiaPrima', 'ordemProducao'])
+                    ->whereHas('ordemProducao.pedido', function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id);
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-    $material = $solicitacao->materiaPrima;
-
-    // 4. Verifica saldo (Sua lógica original mantida)
-    if ($material->quantidade_estoque < $solicitacao->quantidade_solicitada) {
-        return redirect()->back()->with('error', 'Saldo insuficiente no endereço!');
-    }
-
-    // 5. BAIXA O ESTOQUE (Sua lógica original mantida)
-    $material->quantidade_estoque -= $solicitacao->quantidade_solicitada;
-    $material->save();
-
-    // 6. Atualiza a Solicitação ATUAL para Entregue
-    $solicitacao->status = 'Entregue';
-    $solicitacao->save();
-
-    // 7. VERIFICAÇÃO DE LIBERAÇÃO DA MÁQUINA (Sua lógica original mantida)
-    $op = $solicitacao->ordemProducao;
-
-    // Conta pendências (restrito à OP que já validamos ser da turma)
-    $pendencias = \App\Models\SolicitacaoSeparacao::where('ordem_producao_id', $op->id)
-        ->where('status', '!=', 'Entregue')
-        ->count();
-
-    if ($pendencias == 0) {
-        // Se pendências for ZERO, significa que TUDO chegou. Libera a máquina.
-        $op->status_material = 'Entregue';
-        $op->save();
-        $msg = 'Todos os materiais foram separados! A produção está autorizada a iniciar.';
-    } else {
-        // Se ainda tem pendência, apenas avisa que este item foi ok
-        $msg = "Item separado. Faltam {$pendencias} outros itens para liberar a máquina.";
-    }
-
-    return redirect()->route('aluno.almoxarifado.dashboard')->with('success', $msg);
-}
-
-    public function iniciarProducao($id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
-
-    // --- 2. BUSCA A ORDEM (OP) COM TRAVA DE ISOLAMENTO ---
-    // Garante que a OP pertence ao pedido da turma ativa
-    $op = OrdemProducao::whereHas('pedido', function($q) use ($aluno) {
-            $q->where('turma_id', $aluno->turma_id); // <--- BLINDAGEM DE POSSE
-        })
-        ->findOrFail($id);
-
-    // --- 3. TRAVA DO CAOS (MÁQUINA QUEBRADA) ---
-    // (Sua lógica original mantida)
-    if ($op->em_manutencao) {
-        return redirect()->back()->with('error', 'MÁQUINA EM MANUTENÇÃO: Falha técnica detectada. Chame a manutenção (Professor).');
-    }
-    // ----------------------------------------
-
-    // 4. Verificação de Material (Sua lógica original mantida)
-    if ($op->status_material != 'Entregue') {
-        return redirect()->back()->with('error', 'Você precisa do material para começar!');
-    }
-
-    // 5. Muda o status e Inicia o Cronômetro
-    $op->status = 'Em Produção';
-    
-    // Grava o "Carimbo de Tempo" (Usando a hora do Jogo da turma correta)
-    $op->data_inicio_real = $aluno->turma->data_jogo;
-    
-    $op->save();
-
-    return redirect()->back()->with('success', 'Máquina iniciada! Acompanhe o progresso.');
-}
-    // --- APONTAMENTO DE PRODUÇÃO ---
-
-    public function formApontamento($id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
-
-    // --- 2. BUSCA A ORDEM (OP) COM TRAVA DE ISOLAMENTO ---
-    // Garante que a OP pertence ao pedido da turma ativa antes de mostrar o form
-    $op = OrdemProducao::with('produto')
-        ->whereHas('pedido', function($q) use ($aluno) {
-            $q->where('turma_id', $aluno->turma_id); // <--- BLINDAGEM DE POSSE
-        })
-        ->findOrFail($id);
-    
-    // 3. Verificação de Status (Sua lógica original mantida)
-    if ($op->status != 'Em Produção') {
-        return redirect()->route('aluno.producao.dashboard')
-            ->with('error', 'Esta ordem não pode ser apontada agora.');
-    }
-
-    return view('aluno.producao.apontar', compact('op'));
-}
-
-    public function salvarApontamento(Request $request, $id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
-
-    $request->validate([
-        'quantidade_produzida' => 'required|integer|min:0',
-        'quantidade_refugo' => 'required|integer|min:0',
-    ]);
-
-    // --- 2. BUSCA A ORDEM (OP) COM TRAVA DE ISOLAMENTO ---
-    // Carrega a OP, Materiais e Pedido, garantindo que pertencem à turma ativa
-    $op = \App\Models\OrdemProducao::with(['produto.materiasPrimas', 'pedido'])
-        ->whereHas('pedido', function($q) use ($aluno) {
-            $q->where('turma_id', $aluno->turma_id); // <--- BLINDAGEM DE POSSE
-        })
-        ->findOrFail($id);
-
-    // 3. REGISTRA O APONTAMENTO (HISTÓRICO)
-    // Usa a data do jogo da turma correta
-    \App\Models\ApontamentoProducao::create([
-        'ordem_producao_id' => $op->id,
-        'aluno_id' => $aluno->id,
-        'data_apontamento' => $aluno->turma->data_jogo,
-        'quantidade_produzida' => $request->quantidade_produzida,
-        'quantidade_refugo' => $request->quantidade_refugo,
-    ]);
-
-    // 4. CÁLCULO DE SALDO (O QUE FALTA PARA TERMINAR)
-    // Somamos todas as peças boas já apontadas (incluindo o que acabamos de salvar)
-    $totalBoasAteAgora = $op->apontamentos()->sum('quantidade_produzida');
-    $faltamParaMeta = $op->quantidade - $totalBoasAteAgora;
-
-    // 5. SE TEVE REFUGO E AINDA FALTA PRODUZIR -> GERA REPOSIÇÃO
-            if ($request->quantidade_refugo > 0 && $faltamParaMeta > 0) {
-                
-                // --- CORREÇÃO: AGRUPAMENTO INTELIGENTE (Defesa contra receita duplicada) ---
-                // Agrupa os materiais pelo ID para garantir que não gere solicitações duplicadas
-                $receitaUnica = $op->produto->materiasPrimas->groupBy('id');
-
-                foreach ($receitaUnica as $idMp => $colecaoMateriais) {
-                    // Pega o objeto do material (o primeiro da coleção)
-                    $mp = $colecaoMateriais->first();
-                    
-                    // Soma a quantidade técnica (caso o material tenha sido cadastrado 2x na receita)
-                    $qtdNaReceita = $colecaoMateriais->sum(fn($m) => $m->pivot->quantidade);
-                    
-                    // Calcula a perda total
-                    $qtdPerdida = $request->quantidade_refugo * $qtdNaReceita;
-
-                    // 1. CRIA O PICKING (SOLICITAÇÃO WMS)
-                    \App\Models\SolicitacaoSeparacao::create([
-                        'ordem_producao_id' => $op->id,
-                        'materia_prima_id' => $mp->id,
-                        'quantidade_solicitada' => $qtdPerdida,
-                        'aluno_solicitante_id' => $aluno->id,
-                        'status' => 'Pendente'
-                    ]);
-
-                    // 2. VERIFICA ESTOQUE E GERA COMPRA SE NECESSÁRIO
-                    if ($mp->quantidade_estoque >= $qtdPerdida) {
-                        // TEM NO ESTOQUE: Apenas avisa
-                        $op->status_material = 'Solicitado';
-                        
-                        // Opcional: Gera OC não urgente para repor estoque de segurança
-                        \App\Models\OrdemCompra::create([
-                            'pedido_venda_id' => $op->pedido_venda_id,
-                            'materia_prima_id' => $mp->id,
-                            'quantidade' => $qtdPerdida,
-                            'status' => 'Pendente',
-                            'urgente' => false
-                        ]);
-
-                    } else {
-                        // FALTA NO ESTOQUE: GERA COMPRA URGENTE
-                        \App\Models\OrdemCompra::create([
-                            'pedido_venda_id' => $op->pedido_venda_id,
-                            'materia_prima_id' => $mp->id,
-                            'quantidade' => $qtdPerdida,
-                            'status' => 'Pendente',
-                            'urgente' => true
-                        ]);
-                        
-                        // Trava a máquina
-                        $op->status_material = 'Pendente'; 
-                    }
+                if ($solicitacao->status == 'Entregue') {
+                    return redirect()->route('aluno.almoxarifado.dashboard')->with('error', 'Esta solicitação já foi entregue.');
                 }
-            }
 
-    // 6. ATUALIZAÇÃO DE STATUS DA OP
-    if ($totalBoasAteAgora >= $op->quantidade) {
-        // Meta atingida
-        $op->status = 'Concluída';
-        $op->data_fim = $aluno->turma->data_jogo;
-        $op->embalado = false; // Vai para a Embalagem
-        $msg = "Produção finalizada! Lote enviado para conferência na Embalagem.";
-    } else {
-        // Ainda falta (Refugo impediu a conclusão)
-        $op->status = 'Aberta'; 
-        $op->data_inicio_real = null; // Reseta para obrigar "Ligar Máquina" de novo
-        
-        // Define a mensagem correta baseada no status do material
-        if($op->status_material == 'Solicitado') {
-            $msg = "Refugo registrado. Solicitamos {$request->quantidade_refugo} un de material ao Almoxarifado para reposição.";
-        } else {
-            $msg = "Refugo registrado. Material insuficiente! Compra urgente disparada.";
+                $material = MateriaPrima::where('id', $solicitacao->materia_prima_id)->lockForUpdate()->first();
+
+                if (!$material || $material->quantidade_estoque < $solicitacao->quantidade_solicitada) {
+                    return redirect()->back()->with('error', 'Saldo insuficiente no endereço!');
+                }
+
+                $material->quantidade_estoque -= $solicitacao->quantidade_solicitada;
+                $material->save();
+
+                $solicitacao->status = 'Entregue';
+                $solicitacao->save();
+
+                $op = OrdemProducao::where('id', $solicitacao->ordem_producao_id)->lockForUpdate()->first();
+
+                $pendencias = SolicitacaoSeparacao::where('ordem_producao_id', $op->id)
+                    ->where('status', '!=', 'Entregue')
+                    ->count();
+
+                if ($pendencias == 0) {
+                    $op->status_material = 'Entregue';
+                    $op->save();
+                    $msg = 'Todos os materiais foram separados! A produção está autorizada a iniciar.';
+                } else {
+                    $msg = "Item separado. Faltam {$pendencias} outros itens para liberar a máquina.";
+                }
+
+                return redirect()->route('aluno.almoxarifado.dashboard')->with('success', $msg);
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao confirmar separação: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao confirmar separação: ' . $e->getMessage());
         }
     }
 
-    $op->quantidade_perda += $request->quantidade_refugo;
-    // --- LIMPEZA DA SABOTAGEM (O aluno cumpriu a ordem, então destravamos a máquina) ---
-    if ($op->tem_refugo_forcado) {
-        $op->tem_refugo_forcado = false;
-        $op->qtd_refugo_forcado = 0;
-        $op->motivo_refugo_forcado = null;
-    }
-    $op->save();
+    public function iniciarProducao($id)
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
 
-    return redirect()->route('aluno.producao.dashboard')->with('success', $msg);
-}
+        try {
+            return DB::transaction(function () use ($id, $aluno) {
+                $op = OrdemProducao::whereHas('pedido', function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id);
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                if ($op->em_manutencao) {
+                    return redirect()->back()->with('error', 'MÁQUINA EM MANUTENÇÃO: Falha técnica detectada. Chame a manutenção (Professor).');
+                }
+
+                if ($op->status_material != 'Entregue') {
+                    return redirect()->back()->with('error', 'Você precisa do material para começar!');
+                }
+
+                if ($op->status == 'Em Produção') {
+                    return redirect()->back()->with('error', 'A máquina já está em produção!');
+                }
+
+                $op->status = 'Em Produção';
+                $op->data_inicio_real = $aluno->turma->data_jogo;
+                
+                if (Schema::hasColumn('ordens_producao', 'aluno_id')) {
+                    $op->aluno_id = $aluno->id;
+                }
+
+                $op->save();
+
+                return redirect()->back()->with('success', 'Máquina iniciada! Acompanhe o progresso.');
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao iniciar produção: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao iniciar produção: ' . $e->getMessage());
+        }
+    }
+
+    // --- APONTAMENTO DE PRODUÇÃO ---
+
+    public function formApontamento($id)
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+
+        $op = OrdemProducao::with('produto')
+            ->whereHas('pedido', function($q) use ($aluno) {
+                $q->where('turma_id', $aluno->turma_id);
+            })
+            ->findOrFail($id);
+        
+        if ($op->status != 'Em Produção') {
+            return redirect()->route('aluno.producao.dashboard')
+                ->with('error', 'Esta ordem não pode ser apontada agora.');
+        }
+
+        return view('aluno.producao.apontar', compact('op'));
+    }
+
+    public function salvarApontamento(Request $request, $id)
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+
+        $request->validate([
+            'quantidade_produzida' => 'required|integer|min:0',
+            'quantidade_refugo' => 'required|integer|min:0',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request, $id, $aluno) {
+                $op = OrdemProducao::with(['produto.materiasPrimas', 'pedido'])
+                    ->whereHas('pedido', function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id);
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                if ($op->status != 'Em Produção') {
+                    return redirect()->route('aluno.producao.dashboard')
+                        ->with('error', 'Esta ordem não pode ser apontada agora.');
+                }
+
+                // 3. REGISTRA O APONTAMENTO
+                ApontamentoProducao::create([
+                    'ordem_producao_id' => $op->id,
+                    'aluno_id' => $aluno->id,
+                    'data_apontamento' => $aluno->turma->data_jogo,
+                    'quantidade_produzida' => $request->quantidade_produzida,
+                    'quantidade_refugo' => $request->quantidade_refugo,
+                ]);
+
+                // 4. CÁLCULO DE SALDO
+                $totalBoasAteAgora = $op->apontamentos()->sum('quantidade_produzida');
+                $faltamParaMeta = $op->quantidade - $totalBoasAteAgora;
+
+                // 5. SE TEVE REFUGO E AINDA FALTA PRODUZIR -> GERA REPOSIÇÃO
+                if ($request->quantidade_refugo > 0 && $faltamParaMeta > 0) {
+                    $receitaUnica = $op->produto->materiasPrimas->groupBy('id');
+
+                    foreach ($receitaUnica as $idMp => $colecaoMateriais) {
+                        $mp = $colecaoMateriais->first();
+                        $qtdNaReceita = $colecaoMateriais->sum(fn($m) => $m->pivot->quantidade);
+                        $qtdPerdida = $request->quantidade_refugo * $qtdNaReceita;
+
+                        // 1. CRIA O PICKING (SOLICITAÇÃO WMS)
+                        SolicitacaoSeparacao::create([
+                            'ordem_producao_id' => $op->id,
+                            'materia_prima_id' => $mp->id,
+                            'quantidade_solicitada' => $qtdPerdida,
+                            'aluno_solicitante_id' => $aluno->id,
+                            'status' => 'Pendente'
+                        ]);
+
+                        // 2. VERIFICA ESTOQUE E GERA COMPRA SE NECESSÁRIO
+                        if ($mp->quantidade_estoque >= $qtdPerdida) {
+                            $op->status_material = 'Solicitado';
+                            
+                            OrdemCompra::create([
+                                'pedido_venda_id' => $op->pedido_venda_id,
+                                'materia_prima_id' => $mp->id,
+                                'quantidade' => $qtdPerdida,
+                                'status' => 'Pendente',
+                                'urgente' => false
+                            ]);
+                        } else {
+                            OrdemCompra::create([
+                                'pedido_venda_id' => $op->pedido_venda_id,
+                                'materia_prima_id' => $mp->id,
+                                'quantidade' => $qtdPerdida,
+                                'status' => 'Pendente',
+                                'urgente' => true
+                            ]);
+                            
+                            $op->status_material = 'Pendente'; 
+                        }
+                    }
+                }
+
+                // 6. ATUALIZAÇÃO DE STATUS DA OP
+                if ($totalBoasAteAgora >= $op->quantidade) {
+                    $op->status = 'Concluída';
+                    $op->data_fim = $aluno->turma->data_jogo;
+                    $op->embalado = false;
+                    $msg = "Produção finalizada! Lote enviado para conferência na Embalagem.";
+                } else {
+                    $op->status = 'Aberta'; 
+                    $op->data_inicio_real = null;
+                    
+                    if ($op->status_material == 'Solicitado') {
+                        $msg = "Refugo registrado. Solicitamos {$request->quantidade_refugo} un de material ao Almoxarifado para reposição.";
+                    } else if ($request->quantidade_refugo > 0) {
+                        $msg = "Refugo registrado. Sem estoque! Solicitamos compra urgente de {$request->quantidade_refugo} un de material.";
+                    } else {
+                        $msg = "Apontamento registrado com sucesso!";
+                    }
+                }
+
+                $op->quantidade_perda += $request->quantidade_refugo;
+                
+                // --- LIMPEZA DA SABOTAGEM (O aluno cumpriu a ordem, então destravamos a máquina) ---
+                if (isset($op->tem_refugo_forcado) && $op->tem_refugo_forcado) {
+                    $op->tem_refugo_forcado = false;
+                    $op->qtd_refugo_forcado = 0;
+                    $op->motivo_refugo_forcado = null;
+                }
+
+                $op->save();
+
+                return redirect()->route('aluno.producao.dashboard')->with('success', $msg);
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao salvar apontamento: ' . $e->getMessage());
+            return redirect()->route('aluno.producao.dashboard')
+                ->with('error', 'Erro ao registrar apontamento: ' . $e->getMessage());
+        }
+    }
     // --- MÓDULO EXPEDIÇÃO (FATURAMENTO) ---
 
     public function dashboardExpedicao(Request $request)
@@ -1558,78 +1672,86 @@ public function iniciarSeparacao($id)
 
     // --- NOVA FUNÇÃO: FATURAR PEDIDO (COM BAIXA DE ESTOQUE) ---
     public function faturarPedido(Request $request, $id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+    {
+        // 1. IDENTIFICA O ALUNO E A TURMA ATIVA
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
 
-    // --- 2. TRAVAS DE SEGURANÇA (CAOS) ---
-    // Mantida sua lógica original, agora usando o $aluno garantido pela âncora
-    
-    // 1. Verifica se há Greve de Transporte / Bloqueio Físico
-    if ($this->verificarBloqueio($aluno, 'expedicao')) {
-        return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: Expedição suspensa (Greve de Transportes/Logística).');
-    }
+        // 2. TRAVAS DE SEGURANÇA (CAOS)
+        if ($this->verificarBloqueio($aluno, 'expedicao')) {
+            return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: Expedição suspensa (Greve de Transportes/Logística).');
+        }
 
-    // 2. Verifica se o Sistema de TI caiu
-    if ($this->verificarBloqueio($aluno, 'faturamento')) {
-        return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: Sistema de Faturamento fora do ar (Erro de TI).');
-    }
-    // ----------------------------------
+        if ($this->verificarBloqueio($aluno, 'faturamento')) {
+            return redirect()->back()->with('error', 'AÇÃO BLOQUEADA: Sistema de Faturamento fora do ar (Erro de TI).');
+        }
 
-    // --- 3. BUSCA O PEDIDO COM TRAVA DE ISOLAMENTO ---
-    // Garante que o Pedido pertence à turma do aluno.
-    // Isso impede que um aluno baixe estoque e fature pedido de outra turma.
-    $pedido = PedidoVenda::with('itens.produto')
-        ->where('turma_id', $aluno->turma_id) // <--- BLINDAGEM DE POSSE
-        ->findOrFail($id);
+        try {
+            return DB::transaction(function () use ($request, $id, $aluno) {
+                // 3. BUSCA O PEDIDO COM TRAVA DE BANCO
+                $pedido = PedidoVenda::with('itens.produto')
+                    ->where('turma_id', $aluno->turma_id)
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-    // Pega as quantidades que vieram do formulário de conferência (Lógica original mantida)
-    $qtdFaturar = $request->input('qtd_faturar', []); 
-    $valorTotalNota = 0;
+                if ($pedido->status == 'Faturado') {
+                    return redirect()->route('aluno.expedicao.dashboard')
+                        ->with('error', 'Este pedido já foi faturado anteriormente.');
+                }
 
-    // 4. Baixa o Estoque (Sua lógica original mantida)
-    foreach ($pedido->itens as $item) {
-        $produto = $item->produto;
-        
-        // Pega a quantidade definida na tela (ou 0 se não tiver)
-        $qtdSaida = $qtdFaturar[$item->id] ?? 0;
+                $qtdFaturar = $request->input('qtd_faturar', []); 
+                $valorTotalNota = 0;
 
-        if ($qtdSaida > 0) {
-            // Verifica estoque novamente por segurança
-            if ($produto->quantidade_estoque < $qtdSaida) {
-                return redirect()->back()->with('error', "Erro: Estoque insuficiente de {$produto->nome} para a quantidade informada.");
-            }
+                // 4. Baixa o Estoque com Trava
+                foreach ($pedido->itens as $item) {
+                    $qtdSaida = $qtdFaturar[$item->id] ?? 0;
 
-            $produto->quantidade_estoque -= $qtdSaida;
-            $produto->save();
+                    if ($qtdSaida > 0) {
+                        $produto = ProdutoAcabado::where('id', $item->produto_acabado_id)->lockForUpdate()->first();
+                        if (!$produto || $produto->quantidade_estoque < $qtdSaida) {
+                            throw new \Exception("Estoque insuficiente de {$item->produto->nome} para faturar.");
+                        }
 
-            // Soma ao valor da nota
-            $valorTotalNota += ($qtdSaida * $item->preco_unitario);
+                        $produto->decrement('quantidade_estoque', $qtdSaida);
+                        $valorTotalNota += ($qtdSaida * $item->preco_unitario);
+                    }
+                }
+
+                if ($valorTotalNota == 0) {
+                    return redirect()->back()->with('error', 'Nenhum item foi selecionado para faturamento.');
+                }
+
+                // Crédito no caixa da empresa
+                $turma = \App\Models\Turma::where('id', $aluno->turma_id)->lockForUpdate()->first();
+                $turma->increment('capital_atual', $valorTotalNota);
+
+                // 5. Gera a Nota Fiscal (com verificação de coluna para o banco de dados)
+                $dadosNota = [
+                    'pedido_venda_id' => $pedido->id,
+                    'numero_nota' => str_pad($pedido->id + 5000, 6, '0', STR_PAD_LEFT),
+                    'serie' => '1',
+                    'valor_total' => $valorTotalNota,
+                    'data_emissao' => $turma->data_jogo,
+                    'chave_acesso' => fake()->numerify('3523##123456780001##55001000000###12345678'),
+                ];
+
+                if (Schema::hasColumn('notas_fiscais', 'aluno_id')) {
+                    $dadosNota['aluno_id'] = $aluno->id;
+                }
+
+                NotaFiscal::create($dadosNota);
+
+                // 6. Encerra o Pedido
+                $pedido->status = 'Faturado';
+                $pedido->save();
+
+                return redirect()->route('aluno.expedicao.dashboard')->with('success', 'Nota Fiscal emitida com sucesso! Estoque baixado.');
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao faturar pedido: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Falha no faturamento: ' . $e->getMessage());
         }
     }
-
-    if ($valorTotalNota == 0) {
-        return redirect()->back()->with('error', 'Nenhum item foi selecionado para faturamento.');
-    }
-
-    // 5. Gera a Nota Fiscal (Sua lógica original mantida)
-    // Usa a data_jogo da turma correta
-    NotaFiscal::create([
-        'pedido_venda_id' => $pedido->id,
-        'numero_nota' => str_pad($pedido->id + 5000, 6, '0', STR_PAD_LEFT),
-        'serie' => '1',
-        'valor_total' => $valorTotalNota,
-        'data_emissao' => $aluno->turma->data_jogo,
-        'chave_acesso' => fake()->numerify('3523##123456780001##55001000000###12345678'),
-    ]);
-
-    // 6. Encerra o Pedido (Sua lógica original mantida)
-    $pedido->status = 'Faturado';
-    $pedido->save();
-
-    return redirect()->route('aluno.expedicao.dashboard')->with('success', 'Nota Fiscal emitida com sucesso! Estoque baixado.');
-}
     // --- VISUALIZAR NOTA FISCAL (DANFE) ---
   
     public function visualizarNota($id)
@@ -1746,40 +1868,43 @@ public function iniciarSeparacao($id)
      * e libera o pedido para o Dock de Saída (Expedição).
      */
     public function confirmarEmbalagem(Request $request, $id)
-{
-    // --- 1. IDENTIFICA O ALUNO E A TURMA ATIVA (Âncora de Segurança) ---
-    $aluno = $this->getAlunoAtivo();
-    if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
 
-    // --- 2. BUSCA A ORDEM (OP) COM TRAVA DE ISOLAMENTO ---
-    // Garante que a OP sendo embalada pertence a um pedido desta turma
-    $op = OrdemProducao::with(['produto', 'apontamentos'])
-        ->whereHas('pedido', function($q) use ($aluno) {
-            $q->where('turma_id', $aluno->turma_id); // <--- BLINDAGEM DE POSSE
-        })
-        ->findOrFail($id);
+        try {
+            return DB::transaction(function () use ($id, $aluno) {
+                $op = OrdemProducao::with(['produto', 'apontamentos'])
+                    ->whereHas('pedido', function($q) use ($aluno) {
+                        $q->where('turma_id', $aluno->turma_id);
+                    })
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-    // 3. Verifica se já foi embalado (Sua lógica original mantida)
-    if ($op->embalado) {
-        return redirect()->back()->with('error', 'Este lote já foi embalado anteriormente.');
+                if ($op->embalado) {
+                    return redirect()->back()->with('error', 'Este lote já foi embalado anteriormente.');
+                }
+
+                $op->embalado = true;
+                $op->data_embalagem = $aluno->turma->data_jogo;
+                $op->save();
+
+                $qtdFinalProduzida = $op->apontamentos->sum('quantidade_produzida');
+
+                $produto = ProdutoAcabado::where('id', $op->produto_id)->lockForUpdate()->first();
+                if ($produto) {
+                    $produto->quantidade_estoque += $qtdFinalProduzida;
+                    $produto->save();
+                }
+
+                return redirect()->route('aluno.embalagem.dashboard')
+                    ->with('success', "Lote OP #{$op->id} consolidado! {$qtdFinalProduzida} unidades entraram no estoque final.");
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao confirmar embalagem: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao embalar lote: ' . $e->getMessage());
+        }
     }
-
-    // 4. Marca como embalado no Banco de Dados
-    $op->embalado = true;
-    // Usa a data do jogo da turma correta
-    $op->data_embalagem = $aluno->turma->data_jogo;
-    $op->save();
-
-    // 5. MOVIMENTAÇÃO DE ESTOQUE (Sua lógica original mantida)
-    // Somamos apenas as "Peças Boas" que foram apontadas na fábrica
-    $qtdFinalProduzida = $op->apontamentos->sum('quantidade_produzida');
-    
-    $produto = $op->produto;
-    $produto->quantidade_estoque += $qtdFinalProduzida;
-    $produto->save();
-
-    return redirect()->route('aluno.embalagem.dashboard')->with('success', "Lote OP #{$op->id} consolidado! {$qtdFinalProduzida} unidades entraram no estoque final.");
-}
     /**
      * FUNÇÃO CENTRALIZADA PARA PEGAR O ALUNO CORRETO
      * Prioriza a turma com 'jogo_ativo = true'.
@@ -1874,5 +1999,46 @@ public function painelGestaoVista($turma_id = null)
         $oc->save();
 
         return back()->with('error', "INCONFORMIDADE GERADA: A OC #{$oc->id} agora está com defeito programado!");
+    }
+
+    public function assumirDemanda($id)
+    {
+        $aluno = $this->getAlunoAtivo();
+        if (!$aluno) abort(403, 'Aluno não encontrado ou sem turma ativa.');
+
+        if (!Schema::hasTable('demandas_mercado')) {
+            return back()->with('error', 'O módulo de Demandas de Mercado não está ativo no banco de dados.');
+        }
+
+        try {
+            return DB::transaction(function () use ($id, $aluno) {
+                $jaVendeuHoje = 0;
+                if (Schema::hasColumn('pedidos_venda', 'aluno_id')) {
+                    $jaVendeuHoje = PedidoVenda::where('aluno_id', $aluno->id)
+                        ->whereDate('data_pedido', $aluno->turma->data_jogo)
+                        ->count();
+                }
+                
+                $jaAssumiuMasNaoLancou = DemandaMercado::where('aluno_id', $aluno->id)
+                    ->where('status', 'Pendente')
+                    ->count();
+
+                if (($jaVendeuHoje + $jaAssumiuMasNaoLancou) >= ($aluno->turma->limite_vendas_por_aluno ?? 10)) {
+                    return back()->with('error', 'Sua cota de trabalho diária está cheia. Finalize os pendentes ou aguarde o próximo dia.');
+                }
+
+                $demanda = DemandaMercado::lockForUpdate()->findOrFail($id);
+                
+                if ($demanda->aluno_id) {
+                    return back()->with('error', 'Este pedido já foi assumido por outro vendedor!');
+                }
+
+                $demanda->update(['aluno_id' => $aluno->id]);
+                return back()->with('success', 'Pedido reservado! Agora você pode lançá-lo no sistema.');
+            });
+        } catch (\Exception $e) {
+            logger()->error('Erro ao assumir demanda: ' . $e->getMessage());
+            return back()->with('error', 'Erro ao assumir demanda: ' . $e->getMessage());
+        }
     }
 }

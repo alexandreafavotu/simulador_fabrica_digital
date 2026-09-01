@@ -120,6 +120,9 @@
             {{-- MODO 1: MENU INICIAL (VISÃO GERAL DO PÁTIO)             --}}
             {{-- ======================================================= --}}
             @if($modo == 'menu')
+                @php
+                    $inspecaoManual = \App\Models\ConfiguracaoSimulacao::where('chave', 'exigir_inspecao_qualidade')->first()?->valor ?? 0;
+                @endphp
                 
                 {{-- BOTÕES DE AÇÃO RÁPIDA (TOPO) --}}
                 <div class="flex justify-end gap-4 mb-6">
@@ -207,59 +210,53 @@
                                                     @if(Auth::user()->tipo == 'aluno')
                                                         
                                                         {{-- 1. BOTÃO RECUSAR --}}
-                                                        @if($item->tem_inconformidade)
-                                                            {{-- Se tem defeito: HABILITA RECUSA --}}
-                                                            <a href="{{ route('aluno.almoxarifado.recusar', $item->id) }}" class="flex-1 text-center bg-red-500 hover:bg-red-600 text-white border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-[1px] text-xs font-black py-2 px-4 rounded transition uppercase animate-bounce">
+                                                        @if($item->tem_inconformidade || $inspecaoManual)
+                                                            {{-- Se tem defeito OU se a regra de qualidade está ativa: HABILITA RECUSA --}}
+                                                            <a href="{{ route('aluno.almoxarifado.recusar', $item->id) }}" class="flex-1 text-center bg-red-500 hover:bg-red-600 text-white border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-[1px] text-xs font-black py-2 px-4 rounded transition uppercase {{ $item->tem_inconformidade ? 'animate-bounce' : '' }}">
                                                                 @if(Auth::user()->acessibilidade_visual)
-    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
-         style="filter:none!important; stroke:#FFFF00!important;">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
-@else
-    ❌
-@endif
-Recusar
-
+                                                                    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3" style="filter:none!important; stroke:#FFFF00!important;">
+                                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                    </svg>
+                                                                @else
+                                                                    ❌
+                                                                @endif
+                                                                Recusar
                                                             </a>
                                                         @else
-                                                            {{-- Se normal: BLOQUEIA RECUSA --}}
+                                                            {{-- Se normal (regra desligada): BLOQUEIA RECUSA --}}
                                                             <button disabled class="flex-1 bg-gray-200 text-gray-400 border-2 border-gray-300 text-xs font-black py-2 px-4 rounded cursor-not-allowed uppercase">
                                                                @if(Auth::user()->acessibilidade_visual)
-    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
-         style="filter:none!important; stroke:#FFFF00!important;">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
-@else
-    ❌
-@endif
-Recusar
- 
+                                                                    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3" style="filter:none!important; stroke:#FFFF00!important;">
+                                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                    </svg>
+                                                                @else
+                                                                    ❌
+                                                                @endif
+                                                                Recusar
                                                             </button>
                                                         @endif
 
                                                         {{-- 2. BOTÃO RECEBER --}}
-                                                        @if($item->tem_inconformidade)
-                                                            {{-- Se tem defeito: BLOQUEIA RECEBIMENTO --}}
+                                                        @if($item->tem_inconformidade && !$inspecaoManual)
+                                                            {{-- Se tem defeito E a regra de qualidade está DESLIGADA: BLOQUEIA RECEBIMENTO --}}
                                                             <button disabled title="Recebimento suspenso por avaria técnica" class="flex-1 bg-gray-300 text-gray-500 border-2 border-gray-400 text-xs font-black py-2 px-4 rounded cursor-not-allowed uppercase">
                                                                 🚫 Bloqueado
                                                             </button>
                                                         @else
-                                                            {{-- Se normal: HABILITA RECEBIMENTO --}}
+                                                            {{-- Se normal OU se a regra de qualidade está LIGADA: HABILITA RECEBIMENTO --}}
                                                             <form action="{{ route('aluno.almoxarifado.receber', $item->id) }}" method="POST" class="flex-1">
                                                                 @csrf
                                                                 <button class="w-full bg-green-500 hover:bg-green-600 text-white border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-[1px] text-xs font-black py-2 px-4 rounded transition uppercase">
-                                                                  @if(Auth::user()->acessibilidade_visual)
-    <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3"
-         style="filter:none!important; stroke:#FFFF00!important;">
-        <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-@else
-    ✅
-@endif
-Receber
-  
+                                                                    @if(Auth::user()->acessibilidade_visual)
+                                                                        <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="#FFFF00" stroke-width="3" style="filter:none!important; stroke:#FFFF00!important;">
+                                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                                        </svg>
+                                                                    @else
+                                                                        ✅
+                                                                    @endif
+                                                                    Receber
                                                                 </button>
                                                             </form>
                                                         @endif

@@ -48,7 +48,7 @@
     
     {{-- LAYOUT DE PONTA A PONTA (w-full com pouco padding) --}}
     <div class="w-full px-2">
-        <div class="flex justify-between h-20 items-center">
+        <div class="flex justify-between min-h-[80px] h-auto py-2 items-center">
             
             {{-- ================================================= --}}
             {{-- 1. ESQUERDA: LOGO + IDENTIFICAÇÃO DA EMPRESA      --}}
@@ -83,6 +83,8 @@
                         <a href="{{ route('professor.dashboard') }}" class="{{ $linkBase }} {{ request()->routeIs('professor.dashboard') ? 'bg-yellow-400 text-black' : 'bg-white text-gray-700' }}">🏠 Painel</a>
                         <a href="{{ route('professor.turmas.index') }}" class="{{ $linkBase }} {{ request()->routeIs('professor.turmas.*') ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700' }}">🏭 Turmas</a>
                         <a href="{{ route('professor.global.alunos') }}" class="{{ $linkBase }} {{ request()->routeIs('professor.global.*') ? 'bg-blue-500 text-white' : 'bg-white text-gray-700' }}">👥 Alunos</a>
+                        {{-- NOVO BOTÃO: AVALIAÇÕES (POSICIONADO ENTRE ALUNOS E CADASTROS) --}}
+                        <a href="{{ route('professor.avaliacoes.index') }}" class="{{ $linkBase }} {{ request()->routeIs('professor.avaliacoes.*') ? 'bg-purple-600 text-white' : 'bg-white text-gray-700' }}">🎓 Avaliações</a>
                         
                         <div class="relative ml-2">
                             <x-dropdown align="top" width="48">
@@ -108,88 +110,145 @@
                         
                         {{-- Empresa --}}
                         <a href="{{ route('aluno.empresa.perfil') }}" title="Perfil da Empresa"
-                           class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.empresa.perfil') ? 'bg-gray-800 text-white' : 'bg-white text-gray-800' }}">
+                           class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.empresa.perfil') ? 'bg-gray-800 text-white' : 'bg-white text-gray-800' }} flex flex-col items-center h-auto">
                             <span class="text-xs"></span> EMPRESA
+                             @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/empresa.png') }}" class="w-14 h-14 mt-1">
+    @endif
                         </a>
-                        <!-- Botão Gestão à Vista para o Aluno -->
-<a href="{{ route('aluno.gestao_vista') }}" class="flex items-center gap-2 bg-yellow-400 text-black px-3 py-1.5 rounded border-2 border-black shadow-[3px_3px_0px_0px_black] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-[10px] font-black uppercase">
+                       <!-- Botão Gestão à Vista para o Aluno -->
+<a href="{{ route('aluno.gestao_vista') }}" class="flex flex-col items-center h-auto gap-1 bg-yellow-400 text-black px-3 py-1.5 rounded border-2 border-black shadow-[3px_3px_0px_0px_black] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition text-[10px] font-black uppercase">
     <span class="text-sx"></span> Monitor
+    @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/monitor.png') }}" class="w-14 h-14 mt-1">
+    @endif
+</a>
 </a>
                         
 
                         @if($setor == 'vendas' || $setor == 'indefinido')
                             <a href="{{ route('aluno.vendas.index') }}" 
-                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.vendas.*') ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-green-50' }}">
-                                <span class="text-xs"></span> VENDAS
+                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.vendas.*') ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-green-50' }} flex flex-col items-center h-auto">
+                                <span class="text-xs"></span> Vendas
+                                @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/vendas.png') }}" class="w-14 h-14 mt-1">
+    @endif
                             </a>
                         @endif
 
                         @if($setor == 'pcp' || $setor == 'indefinido')
                             <a href="{{ route('aluno.pcp.dashboard') }}" 
-                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.pcp.*') ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-blue-50' }}">
+                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.pcp.*') ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-blue-50' }} flex flex-col items-center h-auto">
                                 <span class="text-xs"></span> PCP
+                                @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/pcp.png') }}" class="w-14 h-14 mt-1">
+    @endif
                             </a>
                         @endif
 
                         @if($setor == 'compras' || $setor == 'indefinido')
                             <a href="{{ route('aluno.compras.dashboard') }}" 
-                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.compras.*') ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-purple-50' }}">
+                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.compras.*') ? 'bg-purple-600 text-white' : 'bg-white text-gray-700 hover:bg-purple-50' }} flex flex-col items-center h-auto">
                                 <span class="text-xs"></span> COMPRAS
+                                @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/compras.png') }}" class="w-14 h-14 mt-1">
+    @endif
                             </a>
                         @endif
 
                         @if($setor == 'almoxarifado' || $setor == 'indefinido')
                             <a href="{{ route('aluno.almoxarifado.dashboard') }}" 
-                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.almoxarifado.*') ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 hover:bg-orange-50' }}">
+                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.almoxarifado.*') ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 hover:bg-orange-50' }} flex flex-col items-center h-auto">
                                 <span class="text-xs"></span> WMS
+                                @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/wms_almoxarifado.png') }}" class="w-14 h-14 mt-1">
+    @endif
                             </a>
                         @endif
 
                         @if($setor == 'producao' || $setor == 'indefinido')
                             <a href="{{ route('aluno.producao.dashboard') }}" 
-                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.producao.*') ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-yellow-50' }}">
+                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.producao.*') ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 hover:bg-yellow-50' }}flex flex-col items-center h-auto">
                                 <span class="text-xs"></span> PRODUÇÃO
+                                @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/producao.png') }}" class="w-14 h-14 mt-1">
+    @endif
                             </a>
                         @endif
                         @if($setor == 'embalagem' || $setor == 'indefinido')
     <a href="{{ route('aluno.embalagem.dashboard') }}" 
-       class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.embalagem.*') ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-blue-50' }}">
+       class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.embalagem.*') ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-blue-50' }} flex flex-col items-center h-auto">
         <span class="text-sm"></span> Embalagem
+        @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/embalagem.png') }}" class="w-14 h-14 mt-1">
+    @endif
     </a>
 @endif
 
                         @if($setor == 'expedicao' || $setor == 'indefinido')
                             <a href="{{ route('aluno.expedicao.dashboard') }}" 
-                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.expedicao.*') ? 'bg-teal-600 text-white' : 'bg-white text-gray-700 hover:bg-teal-50' }}">
+                               class="{{ $linkBaseAluno }} {{ request()->routeIs('aluno.expedicao.*') ? 'bg-teal-600 text-white' : 'bg-white text-gray-700 hover:bg-teal-50' }} flex flex-col items-center h-auto">
                                 <span class="text-xs"></span> EXPEDIÇÃO
+                                @if(Auth::user()?->acessibilidade_pictogramas)
+        <img src="{{ asset('img/menu/expedicao.png') }}" class="w-14 h-14 mt-1">
+    @endif
                             </a>
                         @endif
 
                         {{-- Dropdown Dados --}}
-                        <div class="relative flex items-center h-full">
-                            <x-dropdown align="top" width="48">
-                                <x-slot name="trigger">
-                                {{-- Adicionado 'flex items-center gap-1' para alinhar ícone, texto e seta --}}
-                                <button class="{{ $linkBaseAluno }} bg-white text-gray-700 flex items-center gap-1">
-                                    <span class="text-sm"></span>
-                                    <span>DADOS</span>
-                                    
-                                    {{-- Seta para baixo --}}
-                                    <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </x-slot>
-                                
-                                <x-slot name="content">
-                                    <div class="border-2 border-black shadow-[4px_4px_0px_0px_black]">
-                                        <x-dropdown-link :href="route('aluno.materias-primas.index')">Matérias-Primas</x-dropdown-link>
-                                        <x-dropdown-link :href="route('aluno.clientes.index')">Clientes</x-dropdown-link>
-                                        <x-dropdown-link :href="route('aluno.fornecedores.index')">Fornecedores</x-dropdown-link>
-                                    </div>
-                                </x-slot>
-                            </x-dropdown>
-                        </div>
+<div class="relative flex items-center h-full">
+    <x-dropdown align="top" width="48">
+        <x-slot name="trigger">
+            {{-- Botão DADOS em coluna e altura automática --}}
+            <button class="{{ $linkBaseAluno }} bg-white text-gray-700 flex flex-col items-center h-auto gap-1">
+                <div class="flex items-center gap-1">
+                    <span class="text-sm"></span>
+                    <span>DADOS</span>
+                    
+                    {{-- Seta para baixo --}}
+                    <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+
+                @if(Auth::user()?->acessibilidade_pictogramas)
+                    <img src="{{ asset('img/menu/dados.png') }}" class="w-14 h-14 object-contain">
+                @endif
+            </button>
+        </x-slot>
+        
+        <x-slot name="content">
+            <div class="border-2 border-black shadow-[4px_4px_0px_0px_black]">
+                <x-dropdown-link :href="route('aluno.materias-primas.index')">
+                    <div class="flex items-center gap-2">
+                        @if(Auth::user()?->acessibilidade_pictogramas)
+                            <img src="{{ asset('img/menu/materia_prima.png') }}" class="w-10 h-10 object-contain">
+                        @endif
+                        <span>Matérias-Primas</span>
+                    </div>
+                </x-dropdown-link>
+
+                <x-dropdown-link :href="route('aluno.clientes.index')">
+                    <div class="flex items-center gap-2">
+                        @if(Auth::user()?->acessibilidade_pictogramas)
+                            <img src="{{ asset('img/menu/cliente.png') }}" class="w-10 h-10 object-contain">
+                        @endif
+                        <span>Clientes</span>
+                    </div>
+                </x-dropdown-link>
+
+                <x-dropdown-link :href="route('aluno.fornecedores.index')">
+                    <div class="flex items-center gap-2">
+                        @if(Auth::user()?->acessibilidade_pictogramas)
+                            <img src="{{ asset('img/menu/fornecedor.png') }}" class="w-10 h-10 object-contain">
+                        @endif
+                        <span>Fornecedores</span>
+                    </div>
+                </x-dropdown-link>
+            </div>
+        </x-slot>
+    </x-dropdown>
+</div>
                     @endif
                     
                 </div>

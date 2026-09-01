@@ -86,15 +86,20 @@ Voltar
                                     <input type="text" name="nome_razao_social" x-model="nome" required 
                                            class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]">
                                 </div>
+                                {{-- 1. CAMPO DINÂMICO DE CNPJ/CPF INTEGRADO AO ALPINE.JS DO ALUNO (X-MODEL) --}}
                                 <div>
                                     <label class="block text-xs font-black text-gray-700 uppercase mb-1">CNPJ / CPF</label>
-                                    <input type="text" name="cnpj_cpf" x-model="documento"
-                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] font-mono">
+                                    <input type="text" name="cnpj_cpf" x-model="documento" maxlength="18"
+                                           x-on:input="documento = documento.replace(/\D/g, '').slice(0, 14); if (documento.length <= 11) { documento = documento.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); } else { documento = documento.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2'); }"
+                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] font-mono bg-white">
                                 </div>
+
+                                {{-- 2. CAMPO TELEFONE COM MÁSCARA DINÂMICA (CELULAR OU FIXO) --}}
                                 <div>
                                     <label class="block text-xs font-black text-gray-700 uppercase mb-1">Telefone</label>
-                                    <input type="text" name="telefone" 
-                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]">
+                                    <input type="text" name="telefone" placeholder="(11) 99999-9999" maxlength="15"
+                                           oninput="let v = this.value.replace(/\D/g, '').slice(0, 11); if (v.length > 10) { this.value = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3'); } else if (v.length > 5) { this.value = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3'); } else if (v.length > 2) { this.value = v.replace(/^(\d{2})(\d{0,5})$/, '($1) $2'); } else { this.value = v; }"
+                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] bg-white">
                                 </div>
                             </div>
 
@@ -111,9 +116,12 @@ Voltar
 @endif Localização
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    {{-- CAMPO CEP COM MÁSCARA AUTOMÁTICA EM TEMPO REAL --}}
                                     <div class="md:col-span-1">
                                         <label class="block text-[10px] font-bold text-gray-500 uppercase">CEP</label>
-                                        <input type="text" name="cep" class="w-full border-2 border-black rounded text-sm focus:ring-0">
+                                        <input type="text" name="cep" placeholder="00000-000" maxlength="9"
+                                               oninput="this.value = this.value.replace(/\D/g, '').slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2')"
+                                               class="w-full border-2 border-black rounded text-sm focus:ring-0 bg-white">
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="block text-[10px] font-bold text-gray-500 uppercase">Rua</label>
@@ -132,9 +140,12 @@ Voltar
                                         <label class="block text-[10px] font-bold text-gray-500 uppercase">Cidade</label>
                                         <input type="text" name="cidade" x-model="cidade" class="w-full border-2 border-black rounded text-sm focus:ring-0">
                                     </div>
+                                    {{-- CAMPO UF (FORÇA MAIÚSCULO REAL E IMPEDE NÚMEROS) --}}
                                     <div class="md:col-span-1">
                                         <label class="block text-[10px] font-bold text-gray-500 uppercase">UF</label>
-                                        <input type="text" name="estado" x-model="uf" maxlength="2" class="w-full border-2 border-black rounded text-sm text-center uppercase font-black focus:ring-0">
+                                        <input type="text" name="estado" x-model="uf" maxlength="2"
+                                               x-on:input="uf = uf.toUpperCase().replace(/[^a-zA-Z]/g, '')"
+                                               class="w-full border-2 border-black rounded text-sm text-center uppercase font-black focus:ring-0 bg-white">
                                     </div>
                                 </div>
                             </div>

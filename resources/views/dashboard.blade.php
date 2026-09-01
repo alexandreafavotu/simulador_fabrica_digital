@@ -69,7 +69,7 @@
                 </div>
                 
                 <div class="bg-gray-100 p-4 text-center border-t-4 border-black">
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sistema de Gestão Industrial Integrada v1.5</p>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sistema de Gestão Industrial Integrada</p>
                 </div>
 
             </div>

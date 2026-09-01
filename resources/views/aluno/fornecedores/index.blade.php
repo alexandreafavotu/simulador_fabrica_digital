@@ -80,15 +80,20 @@ Voltar
                                     <input type="text" name="nome_razao_social" x-model="nome" required 
                                            class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]">
                                 </div>
+                                {{-- 1. CAMPO DINÂMICO DE CNPJ/CPF COM MÁSCARA AUTOMÁTICA EM TEMPO REAL --}}
                                 <div>
                                     <label class="block text-xs font-black text-gray-700 uppercase mb-1">CNPJ / CPF</label>
-                                    <input type="text" name="cnpj_cpf" 
-                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] font-mono">
+                                    <input type="text" name="cnpj_cpf" placeholder="00.000.000/0001-00 ou 000.000.000-00" maxlength="18"
+                                           oninput="let v = this.value.replace(/\D/g, '').slice(0, 14); if (v.length <= 11) { v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); } else { v = v.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2'); } this.value = v;"
+                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] font-mono bg-white">
                                 </div>
+
+                                {{-- 2. CAMPO TELEFONE COM MÁSCARA DINÂMICA (CELULAR OU FIXO) --}}
                                 <div>
                                     <label class="block text-xs font-black text-gray-700 uppercase mb-1">Telefone</label>
-                                    <input type="text" name="telefone" 
-                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]">
+                                    <input type="text" name="telefone" placeholder="(11) 99999-9999" maxlength="15"
+                                           oninput="let v = this.value.replace(/\D/g, '').slice(0, 11); if (v.length > 10) { this.value = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3'); } else if (v.length > 5) { this.value = v.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3'); } else if (v.length > 2) { this.value = v.replace(/^(\d{2})(\d{0,5})$/, '($1) $2'); } else { this.value = v; }"
+                                           class="w-full border-2 border-black p-2 rounded font-bold text-sm focus:ring-0 focus:border-indigo-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] bg-white">
                                 </div>
                             </div>
 

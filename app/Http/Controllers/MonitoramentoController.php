@@ -16,6 +16,7 @@ use App\Models\LocalEstoque;
 use App\Models\SolicitacaoSeparacao;
 use App\Models\NotaFiscal;
 use App\Models\ApontamentoProducao;
+use App\Models\DemandaMercado;
 
 class MonitoramentoController extends Controller
 {
@@ -280,40 +281,68 @@ class MonitoramentoController extends Controller
 
     // --- VENDAS (CORRIGIDO) ---
     public function verVendas(Request $request, $turmaId)
-    {
-        $aluno = $this->getAlunoSimulado($turmaId);
-        $modo = $request->input('tela', 'menu');
-        $dataSimulacao = $aluno->turma->data_jogo;
+{
+    // 1. Simula o aluno (Visualização do Professor)
+    $aluno = $this->getAlunoSimulado($turmaId);
+    $modo = $request->input('tela', 'menu');
+    $dataSimulacao = $aluno->turma->data_jogo;
 
-        $pedidos = [];
-        $dadosStats = [];
-        $clientes = Cliente::where('turma_id', $turmaId)->get();
-        $produtos = ProdutoAcabado::all();
+    // 2. CORREÇÃO: Busca as Demandas da IA (Mural)
+    // Isso evita o erro "Undefined variable $demandasMercado"
+    $demandasMercado = \App\Models\DemandaMercado::with(['cliente', 'itens.produto'])
+        ->where('turma_id', $turmaId)
+        ->where('status', 'Pendente')
+        ->get();
 
-        switch ($modo) {
-            case 'historico':
-                $query = PedidoVenda::with(['cliente', 'turma', 'itens.produto'])->where('turma_id', $turmaId);
-                if ($request->filled('filtro_cliente')) $query->where('cliente_id', $request->filtro_cliente);
-                if ($request->filled('filtro_status')) $query->where('status', $request->filtro_status);
-                $pedidos = $query->orderBy('created_at', 'desc')->get();
-                break;
+    // 3. Dados Padrão
+    $pedidos = [];
+    $dadosStats = [];
+    $clientes = Cliente::where('turma_id', $turmaId)->get();
+    
+    // Filtramos produtos da turma ou globais (melhor que all())
+    $produtos = ProdutoAcabado::where(function($q) use ($turmaId) {
+        $q->where('turma_id', $turmaId)->orWhereNull('turma_id');
+    })->get();
 
-            case 'novo':
-                // Professor não cria pedido, só vê formulário vazio (ou poderíamos bloquear)
-                break;
+    // 4. Lógica de Telas
+    switch ($modo) {
+        case 'historico':
+            $query = PedidoVenda::with(['cliente', 'turma', 'itens.produto'])
+                        ->where('turma_id', $turmaId);
+            
+            if ($request->filled('filtro_cliente')) $query->where('cliente_id', $request->filtro_cliente);
+            if ($request->filled('filtro_status')) $query->where('status', $request->filtro_status);
+            
+            $pedidos = $query->orderBy('created_at', 'desc')->get();
+            break;
 
-            default:
-                $dadosStats = [
-                    'total_pedidos' => PedidoVenda::where('turma_id', $turmaId)->count(),
-                    'total_faturado' => PedidoVenda::where('turma_id', $turmaId)->where('status', 'Faturado')->sum('valor_total'),
-                    'pedidos_abertos' => PedidoVenda::where('turma_id', $turmaId)->whereIn('status', ['Novo', 'Em Produção'])->count(),
-                ];
-                break;
-        }
+        case 'novo':
+            // Professor apenas visualiza o mural e o formulário
+            break;
 
-        return view('aluno.vendas.index', compact('pedidos', 'clientes', 'produtos', 'aluno', 'dataSimulacao', 'modo', 'dadosStats'));
+        default:
+            $dadosStats = [
+                'total_pedidos' => PedidoVenda::where('turma_id', $turmaId)->count(),
+                'total_faturado' => PedidoVenda::where('turma_id', $turmaId)->where('status', 'Faturado')->sum('valor_total'),
+                'pedidos_abertos' => PedidoVenda::where('turma_id', $turmaId)->whereIn('status', ['Novo', 'Em Produção'])->count(),
+                // Define como nulo para não quebrar a lógica de cota no Blade
+                'limite_info' => null 
+            ];
+            break;
     }
 
+    // 5. Retorno com todas as variáveis necessárias
+    return view('aluno.vendas.index', compact(
+        'pedidos', 
+        'clientes', 
+        'produtos', 
+        'aluno', 
+        'dataSimulacao', 
+        'modo', 
+        'dadosStats',
+        'demandasMercado' // <--- A peça que faltava
+    ));
+}
     // --- WMS ---
     // --- WMS ---
     public function verMapa($turmaId)

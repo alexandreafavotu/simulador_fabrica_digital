@@ -15,11 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // 1. Cria o usuário de teste padrão (Seu código original mantido)
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+        ]);
+
+        // 2. Dispara a população das competências da Fábrica Digital (Novo código)
+        $this->call([
+            CompetenciasCursosSeeder::class,
         ]);
     }
 }
