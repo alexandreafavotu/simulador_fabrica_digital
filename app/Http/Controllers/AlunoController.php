@@ -548,9 +548,9 @@ class AlunoController extends Controller
                 // 6. Atualização segura da compra
                 $compra->fornecedor_id = $request->fornecedor_id;
                 
-                // Grava aluno_id APENAS se a coluna existir no banco de dados do servidor
+                // Grava aluno_id (foreign key para users.id) APENAS se a coluna existir no banco de dados
                 if (Schema::hasColumn('ordens_compra', 'aluno_id')) {
-                    $compra->aluno_id = $aluno->id;
+                    $compra->aluno_id = $aluno->user_id ?? $aluno->id;
                 }
                 
                 $compra->data_entrega_prevista = $dataEntrega;
@@ -925,7 +925,7 @@ class AlunoController extends Controller
                 $compra->status = 'Concluído'; 
                 
                 if (Schema::hasColumn('ordens_compra', 'aluno_id')) {
-                    $compra->aluno_id = $aluno->id;
+                    $compra->aluno_id = $aluno->user_id ?? $aluno->id;
                 }
 
                 $compra->save();
@@ -1736,7 +1736,7 @@ public function iniciarSeparacao($id)
                 ];
 
                 if (Schema::hasColumn('notas_fiscais', 'aluno_id')) {
-                    $dadosNota['aluno_id'] = $aluno->id;
+                    $dadosNota['aluno_id'] = $aluno->user_id ?? $aluno->id;
                 }
 
                 NotaFiscal::create($dadosNota);
